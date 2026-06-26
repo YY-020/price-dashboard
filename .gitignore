@@ -2,7 +2,6 @@
 __pycache__/
 *.pyc
 *.pyo
-02_Output/*.csv
 02_Output/*.log
 .env
 .git/
