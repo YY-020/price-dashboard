@@ -7,3 +7,5 @@ __pycache__/
 .git/
 .DS_Store
 Thumbs.db
+SYSTEM.md
+.streamlit/secrets.toml
