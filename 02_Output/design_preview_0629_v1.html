@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>锂电产业链价格看板</title>
+    <!-- ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js">
+    </script>
+    <style>
+        /* ========== 全局 ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Calibri', 'Microsoft YaHei', sans-serif;
+            background: #f5f7fc;
+            color: #1e293b;
+            padding: 24px 32px;
+            min-height: 100vh;
+        }
+
+        /* ========== 顶部 ========== */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .app-header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            color: #0b2b4a;
+            letter-spacing: 0.5px;
+        }
+        .app-header h1 span {
+            color: #2b6c9e;
+        }
+        .app-header .update-time {
+            font-size: 14px;
+            color: #6b7a8f;
+            background: #fff;
+            padding: 6px 16px;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+        }
+
+        /* ========== Tab 导航 ========== */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            background: #fff;
+            border-radius: 12px;
+            padding: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .tabs .tab {
+            padding: 10px 28px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            color: #6b7a8f;
+            transition: all 0.2s;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+        }
+        .tabs .tab:hover {
+            background: #eef3f9;
+            color: #1e293b;
+        }
+        .tabs .tab.active {
+            background: #1a4b74;
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(26, 75, 116, 0.25);
+        }
+
+        /* ========== 页面容器 ========== */
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== 总览页 ========== */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 24px;
+            margin-top: 8px;
+        }
+        .overview-col {
+            background: #fff;
+            border-radius: 16px;
+            padding: 20px 18px 22px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e9edf4;
+        }
+        .overview-col .col-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0b2b4a;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e9edf4;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .overview-col .col-title .badge {
+            font-size: 12px;
+            font-weight: 400;
+            color: #6b7a8f;
+            background: #f0f4fa;
+            padding: 0 10px;
+            border-radius: 12px;
+            line-height: 22px;
+        }
+        .overview-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f4fa;
+        }
+        .overview-item:last-child {
+            border-bottom: none;
+        }
+        .overview-item .mat-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+        .overview-item .mat-name sub {
+            font-size: 11px;
+            color: #6b7a8f;
+        }
+        .overview-item .mat-price {
+            font-weight: 600;
+            font-size: 15px;
+            color: #0b2b4a;
+        }
+        .overview-item .mat-price .unit {
+            font-weight: 400;
+            font-size: 12px;
+            color: #6b7a8f;
+            margin-left: 2px;
+        }
+        .overview-item .mat-changes {
+            display: flex;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .overview-item .mat-changes .up {
+            color: #d0312d;
+        }
+        .overview-item .mat-changes .down {
+            color: #2e7d32;
+        }
+        .overview-item .mat-changes .flat {
+            color: #9aa6b5;
+        }
+        .overview-item .mat-changes .label-light {
+            font-weight: 400;
+            color: #9aa6b5;
+            font-size: 11px;
+        }
+
+        /* ========== 筛选栏（单材料 & 多材料） ========== */
+        .filter-bar {
+            background: #fff;
+            border-radius: 14px;
+            padding: 16px 22px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid #e9edf4;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px 24px;
+            margin-bottom: 20px;
+        }
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .filter-group label {
+            font-size: 13px;
+            color: #6b7a8f;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .filter-group select,
+        .filter-group input {
+            padding: 6px 12px;
+            border: 1px solid #dce2ec;
+            border-radius: 8px;
+            font-size: 13px;
+            background: #fafbfc;
+            color: #1e293b;
+            outline: none;
+            font-family: inherit;
+            transition: 0.2s;
+            min-width: 100px;
+        }
+        .filter-group select:focus,
+        .filter-group input:focus {
+            border-color: #2b6c9e;
+            box-shadow: 0 0 0 3px rgba(43, 108, 158, 0.12);
+        }
+        .filter-group .quick-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .filter-group .quick-tags .tag {
+            padding: 4px 14px;
+            border-radius: 16px;
+            border: 1px solid #dce2ec;
+            font-size: 12px;
+            cursor: pointer;
+            background: #fafbfc;
+            color: #6b7a8f;
+            transition: 0.2s;
+        }
+        .filter-group .quick-tags .tag:hover {
+            border-color: #2b6c9e;
+            color: #1e293b;
+        }
+        .filter-group .quick-tags .tag.active {
+            background: #1a4b74;
+            border-color: #1a4b74;
+            color: #fff;
+        }
+
+        /* ========== KPI 卡片行 ========== */
+        .kpi-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .kpi-card {
+            background: #fff;
+            border-radius: 14px;
+            padding: 18px 20px;
+            border: 1px solid #e9edf4;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+            transition: 0.2s;
+        }
+        .kpi-card:hover {
+            border-color: #cbd7e8;
+        }
+        .kpi-card .label {
+            font-size: 13px;
+            color: #6b7a8f;
+            margin-bottom: 4px;
+        }
+        .kpi-card .label .date-tag {
+            font-size: 12px;
+            color: #9aa6b5;
+            margin-left: 8px;
+            font-weight: 400;
+        }
+        .kpi-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0b2b4a;
+            letter-spacing: 0.3px;
+        }
+        .kpi-card .value .unit {
+            font-size: 15px;
+            font-weight: 400;
+            color: #6b7a8f;
+            margin-left: 4px;
+        }
+        .kpi-card .change {
+            font-size: 14px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .kpi-card .change.up {
+            color: #d0312d;
+        }
+        .kpi-card .change.down {
+            color: #2e7d32;
+        }
+        .kpi-card .change .label-light {
+            font-weight: 400;
+            color: #9aa6b5;
+            font-size: 12px;
+        }
+
+        /* ========== 图表容器 ========== */
+        .chart-wrapper {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px 20px 12px;
+            border: 1px solid #e9edf4;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            margin-top: 4px;
+            position: relative;
+        }
+        .chart-wrapper .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .chart-wrapper .chart-header .chart-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0b2b4a;
+        }
+        .chart-wrapper .chart-header .chart-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .chart-wrapper .chart-header .chart-actions button {
+            padding: 4px 14px;
+            border: 1px solid #dce2ec;
+            border-radius: 6px;
+            background: #fafbfc;
+            font-size: 12px;
+            color: #1e293b;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .chart-wrapper .chart-header .chart-actions button:hover {
+            background: #eef3f9;
+            border-color: #b0c4db;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+        }
+
+        /* ========== 多材料对比额外控制 ========== */
+        .multi-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 16px 24px;
+            background: #fff;
+            border-radius: 14px;
+            padding: 14px 22px;
+            border: 1px solid #e9edf4;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+        }
+        .multi-controls .mode-group {
+            display: flex;
+            gap: 4px;
+            background: #f0f4fa;
+            padding: 3px;
+            border-radius: 8px;
+        }
+        .multi-controls .mode-group .mode-btn {
+            padding: 6px 18px;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6b7a8f;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+        .multi-controls .mode-group .mode-btn.active {
+            background: #fff;
+            color: #1a4b74;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+        .multi-controls .mode-group .mode-btn:hover:not(.active) {
+            color: #1e293b;
+        }
+        .multi-controls .mat-selector {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .multi-controls .mat-selector .pill {
+            background: #f0f4fa;
+            padding: 4px 12px 4px 16px;
+            border-radius: 16px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #dce2ec;
+        }
+        .multi-controls .mat-selector .pill .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .multi-controls .mat-selector .pill .remove {
+            cursor: pointer;
+            color: #9aa6b5;
+            font-weight: 700;
+            font-size: 14px;
+        }
+        .multi-controls .mat-selector .pill .remove:hover {
+            color: #d0312d;
+        }
+        .multi-controls .mat-selector .add-btn {
+            padding: 4px 16px;
+            border: 1px dashed #b0c4db;
+            border-radius: 16px;
+            background: transparent;
+            color: #6b7a8f;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+        .multi-controls .mat-selector .add-btn:hover {
+            border-color: #2b6c9e;
+            color: #1e293b;
+            background: #f5f9ff;
+        }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 1200px) {
+            .overview-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .kpi-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+            .overview-grid {
+                grid-template-columns: 1fr;
+            }
+            .kpi-row {
+                grid-template-columns: 1fr;
+            }
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .multi-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .app-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .tabs .tab {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+        }
+
+        /* ========== 工具类 ========== */
+        .text-muted {
+            color: #9aa6b5;
+            font-size: 13px;
+        }
+        .mt-8 {
+            margin-top: 8px;
+        }
+        .mb-8 {
+            margin-bottom: 8px;
+        }
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================================ -->
+    <!-- 顶部 -->
+    <!-- ============================================================ -->
+    <header class="app-header">
+        <h1>⚡ 锂电产业链 <span>价格追踪</span></h1>
+        <div class="update-time">📅 数据更新：<span id="globalUpdateTime">2026-06-29 10:30</span></div>
+    </header>
+
+    <!-- ============================================================ -->
+    <!-- Tab 导航 -->
+    <!-- ============================================================ -->
+    <div class="tabs" id="mainTabs">
+        <button class="tab active" data-page="overview">📊 总览 · 产业链</button>
+        <button class="tab" data-page="single">📈 单材料价格</button>
+        <button class="tab" data-page="multi">📉 多材料对比</button>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 页面：总览 -->
+    <!-- ============================================================ -->
+    <div class="page active" id="page-overview">
+        <div class="overview-grid" id="overviewGrid">
+            <!-- 由 JS 动态渲染 -->
+        </div>
+        <div style="margin-top: 16px; font-size: 13px; color: #9aa6b5; text-align: right;">
+            ⚡ 本周均价（周一至周五） · 环比 = 较上周同期 · 同比 = 较去年同期
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 页面：单材料价格 -->
+    <!-- ============================================================ -->
+    <div class="page" id="page-single">
+
+        <!-- 筛选栏（置顶） -->
+        <div class="filter-bar" id="singleFilterBar">
+            <div class="filter-group">
+                <label>材料</label>
+                <select id="singleMaterial"></select>
+            </div>
+            <div class="filter-group">
+                <label>开始</label>
+                <input type="date" id="singleStart" />
+            </div>
+            <div class="filter-group">
+                <label>结束</label>
+                <input type="date" id="singleEnd" />
+            </div>
+            <div class="filter-group">
+                <label>频率</label>
+                <select id="singleFreq">
+                    <option value="日度">日度</option>
+                    <option value="周度">周度</option>
+                    <option value="月度">月度</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>单位</label>
+                <select id="singleUnit">
+                    <option value="CNY">人民币/吨</option>
+                    <option value="USD">美元/吨</option>
+                </select>
+            </div>
+            <div class="filter-group" style="margin-left:auto;">
+                <div class="quick-tags">
+                    <span class="tag" data-range="7d">近1周</span>
+                    <span class="tag active" data-range="1m">近1月</span>
+                    <span class="tag" data-range="6m">近6月</span>
+                    <span class="tag" data-range="1y">近1年</span>
+                    <span class="tag" data-range="all">全部</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 卡片 -->
+        <div class="kpi-row" id="singleKpi">
+            <!-- 由 JS 动态渲染 -->
+        </div>
+
+        <!-- 图表 -->
+        <div class="chart-wrapper">
+            <div class="chart-header">
+                <div class="chart-title" id="singleChartTitle">电池级碳酸锂 日度价格走势</div>
+                <div class="chart-actions">
+                    <button onclick="downloadChartImage('singleChart')">🖼️ 下载图片</button>
+                    <button onclick="downloadChartData('singleChart')">📥 下载数据</button>
+                </div>
+            </div>
+            <div id="singleChart" class="chart-container"></div>
+            <div style="font-size:12px; color:#9aa6b5; margin-top:4px; text-align:right;">数据来源：GEO / SMM / BaiInfor</div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- 页面：多材料对比 -->
+    <!-- ============================================================ -->
+    <div class="page" id="page-multi">
+
+        <!-- 多材料控制栏 -->
+        <div class="multi-controls" id="multiControls">
+            <div class="mode-group">
+                <button class="mode-btn active" data-mode="single">单Y轴</button>
+                <button class="mode-btn" data-mode="dual">双Y轴</button>
+                <button class="mode-btn" data-mode="normalized">归一化</button>
+            </div>
+            <div class="mat-selector" id="multiMaterialSelector">
+                <!-- 由 JS 动态渲染 -->
+            </div>
+            <div class="filter-group" id="multiBaseDateGroup" style="display:none;">
+                <label>基准日</label>
+                <input type="date" id="multiBaseDate" />
+            </div>
+            <div class="filter-group" style="margin-left:auto;">
+                <label>单位</label>
+                <select id="multiUnit">
+                    <option value="CNY">人民币/吨</option>
+                    <option value="USD">美元/吨</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 图表 -->
+        <div class="chart-wrapper">
+            <div class="chart-header">
+                <div class="chart-title" id="multiChartTitle">多材料价格对比 · 单Y轴</div>
+                <div class="chart-actions">
+                    <button onclick="downloadChartImage('multiChart')">🖼️ 下载图片</button>
+                    <button onclick="downloadChartData('multiChart')">📥 下载数据</button>
+                </div>
+            </div>
+            <div id="multiChart" class="chart-container"></div>
+            <div style="font-size:12px; color:#9aa6b5; margin-top:4px; text-align:right;">数据来源：GEO / SMM / BaiInfor</div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- JavaScript -->
+    <!-- ============================================================ -->
+    <script>
+        // ================================================================
+        // 1. 数据定义（模拟 Supabase 数据）
+        // ================================================================
+        const MATERIAL_GROUPS = {
+            '上游-原材料': [
+                { key: '碳酸锂', label: '碳酸锂 Li₂CO₃', chem: 'Li₂CO₃' },
+                { key: '氢氧化锂', label: '氢氧化锂 LiOH', chem: 'LiOH' },
+                { key: '六氟磷酸锂', label: '六氟磷酸锂 LiPF₆', chem: 'LiPF₆' },
+                { key: '电解液溶剂', label: '电解液溶剂 DMC', chem: 'DMC' },
+                { key: '电解液添加剂', label: '电解液添加剂 VC', chem: 'VC' },
+                { key: '硫酸钴', label: '硫酸钴 CoSO₄', chem: 'CoSO₄' },
+                { key: '硫酸镍', label: '硫酸镍 NiSO₄', chem: 'NiSO₄' },
+                { key: '硫酸锰', label: '硫酸锰 MnSO₄', chem: 'MnSO₄' },
+            ],
+            '中游-电解液': [
+                { key: '电解液', label: '电解液 (1.0M LiPF₆)', chem: '1.0M LiPF₆' },
+            ],
+            '中游-LFP': [
+                { key: '磷酸铁锂', label: '磷酸铁锂 LFP', chem: 'LFP' },
+            ],
+            '中游-CNT': [
+                { key: '碳纳米管', label: '碳纳米管 CNT', chem: 'CNT' },
+            ],
+            '下游-电芯': [
+                { key: 'LFP电芯', label: 'LFP电芯 174Ah', chem: 'LFP-174Ah' },
+                { key: '三元电芯', label: '三元电芯 523', chem: 'NCM-523' },
+                { key: '圆柱电芯', label: '圆柱电芯 18650', chem: '18650' },
+            ]
+        };
+
+        // 所有材料列表（用于下拉）
+        const ALL_MATERIALS = Object.values(MATERIAL_GROUPS).flat();
+
+        // 模拟价格数据生成
+        function generateMockData() {
+            const data = [];
+            const start = new Date('2023-01-01');
+            const end = new Date('2026-06-29');
+            const materials = ALL_MATERIALS.map(m => m.key);
+
+            // 为每种材料生成一条价格曲线
+            materials.forEach((mat, idx) => {
+                let price = 50000 + idx * 12000 + Math.random() * 20000;
+                let d = new Date(start);
+                while (d <= end) {
+                    // 跳过周末
+                    if (d.getDay() !== 0 && d.getDay() !== 6) {
+                        // 随机波动
+                        price = price * (1 + (Math.random() - 0.48) * 0.025);
+                        price = Math.max(price, 8000 + idx * 6000);
+                        data.push({
+                            date: d.toISOString().slice(0, 10),
+                            material_key: mat,
+                            price: Math.round(price)
+                        });
+                    }
+                    d.setDate(d.getDate() + 1);
+                }
+            });
+            return data;
+        }
+
+        const mockData = generateMockData();
+
+        // 获取本周一至周五的日期
+        function getThisWeekRange() {
+            const now = new Date();
+            const day = now.getDay();
+            const monday = new Date(now);
+            monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+            const friday = new Date(monday);
+            friday.setDate(monday.getDate() + 4);
+            return {
+                start: monday.toISOString().slice(0, 10),
+                end: friday.toISOString().slice(0, 10)
+            };
+        }
+
+        // 获取本周均价
+        function getWeeklyAvg(materialKey) {
+            const range = getThisWeekRange();
+            const filtered = mockData.filter(d =>
+                d.material_key === materialKey &&
+                d.date >= range.start &&
+                d.date <= range.end
+            );
+            if (filtered.length === 0) return null;
+            const sum = filtered.reduce((s, r) => s + r.price, 0);
+            return Math.round(sum / filtered.length);
+        }
+
+        // 获取最新价格
+        function getLatestPrice(materialKey) {
+            const filtered = mockData.filter(d => d.material_key === materialKey);
+            if (filtered.length === 0) return null;
+            filtered.sort((a, b) => b.date.localeCompare(a.date));
+            return filtered[0];
+        }
+
+        // 获取某日价格
+        function getPriceOnDate(materialKey, dateStr) {
+            const found = mockData.find(d => d.material_key === materialKey && d.date === dateStr);
+            return found ? found.price : null;
+        }
+
+        // 计算涨跌幅
+        function calcChange(current, previous) {
+            if (!previous || previous === 0) return null;
+            return ((current - previous) / previous * 100);
+        }
+
+        // ================================================================
+        // 2. 渲染：总览页（产业链三列布局）
+        // ================================================================
+        function renderOverview() {
+            const grid = document.getElementById('overviewGrid');
+            grid.innerHTML = '';
+
+            // 定义三列
+            const columns = [
+                { title: '⬆ 上游 · 原材料', group: '上游-原材料' },
+                { title: '⚙️ 中游 · 材料加工', group: '中游-电解液' },
+                { title: '⬇ 下游 · 电芯', group: '下游-电芯' },
+            ];
+
+            // 中游分三块：电解液、LFP、CNT
+            const midGroups = ['中游-电解液', '中游-LFP', '中游-CNT'];
+
+            // 实际构建时，第一列放上游，第二列放中游三块合并，第三列放下游
+            // 但为了清晰，我们按三列展示，中游合并展示三个子块
+            const colConfigs = [
+                { title: '⬆ 上游 · 原材料', keys: Object.keys(MATERIAL_GROUPS).filter(k => k.startsWith('上游')) },
+                { title: '⚙️ 中游 · 电解液 / LFP / CNT', keys: ['中游-电解液', '中游-LFP', '中游-CNT'] },
+                { title: '⬇ 下游 · 电芯', keys: ['下游-电芯'] },
+            ];
+
+            colConfigs.forEach(col => {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'overview-col';
+
+                const titleDiv = document.createElement('div');
+                titleDiv.className = 'col-title';
+                titleDiv.innerHTML = `${col.title} <span class="badge">本周均价</span>`;
+                colDiv.appendChild(titleDiv);
+
+                const itemsContainer = document.createElement('div');
+
+                col.keys.forEach(groupKey => {
+                    const materials = MATERIAL_GROUPS[groupKey] || [];
+                    materials.forEach(mat => {
+                        const avg = getWeeklyAvg(mat.key);
+                        const latest = getLatestPrice(mat.key);
+                        const item = document.createElement('div');
+                        item.className = 'overview-item';
+
+                        // 名称（含化学式）
+                        const nameSpan = document.createElement('span');
+                        nameSpan.className = 'mat-name';
+                        nameSpan.innerHTML = mat.label.replace(/\d/g, match => {
+                            // 简单下标转换
+                            return `<sub>${match}</sub>`;
+                        });
+                        // 处理化学式中的数字下标（简化版）
+                        // 更精确的替换稍后做
+
+                        // 价格和涨跌
+                        const priceSpan = document.createElement('span');
+                        priceSpan.className = 'mat-price';
+                        const changesSpan = document.createElement('span');
+                        changesSpan.className = 'mat-changes';
+
+                        if (avg !== null && latest) {
+                            priceSpan.innerHTML = `${avg} <span class="unit">元/吨</span>`;
+
+                            // 环比（与上周同期比较）
+                            const lastWeekDate = new Date();
+                            lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+                            const lastWeekStr = lastWeekDate.toISOString().slice(0, 10);
+                            const lastWeekPrice = getPriceOnDate(mat.key, lastWeekStr);
+                            const changeWoW = lastWeekPrice ? calcChange(avg, lastWeekPrice) : null;
+
+                            // 同比（与去年同期比较）
+                            const lastYearDate = new Date();
+                            lastYearDate.setFullYear(lastYearDate.getFullYear() - 1);
+                            const lastYearStr = lastYearDate.toISOString().slice(0, 10);
+                            const lastYearPrice = getPriceOnDate(mat.key, lastYearStr);
+                            const changeYoY = lastYearPrice ? calcChange(avg, lastYearPrice) : null;
+
+                            let changesHtml = '';
+                            if (changeWoW !== null) {
+                                const cls = changeWoW > 0.5 ? 'up' : changeWoW < -0.5 ? 'down' : 'flat';
+                                const sign = changeWoW > 0 ? '+' : '';
+                                changesHtml +=
+                                    `<span class="${cls}">${sign}${changeWoW.toFixed(1)}% <span class="label-light">环比</span></span>`;
+                            }
+                            if (changeYoY !== null) {
+                                const cls = changeYoY > 0.5 ? 'up' : changeYoY < -0.5 ? 'down' : 'flat';
+                                const sign = changeYoY > 0 ? '+' : '';
+                                changesHtml +=
+                                    `<span class="${cls}">${sign}${changeYoY.toFixed(1)}% <span class="label-light">同比</span></span>`;
+                            }
+                            changesSpan.innerHTML = changesHtml || '<span class="flat">—</span>';
+                        } else {
+                            priceSpan.innerHTML = '—';
+                            changesSpan.innerHTML = '<span class="flat">暂无数据</span>';
+                        }
+
+                        // 组装
+                        const leftDiv = document.createElement('div');
+                        leftDiv.style.display = 'flex';
+                        leftDiv.style.flexDirection = 'column';
+                        leftDiv.appendChild(nameSpan);
+                        const rightDiv = document.createElement('div');
+                        rightDiv.style.display = 'flex';
+                        rightDiv.style.alignItems = 'center';
+                        rightDiv.style.gap = '12px';
+                        rightDiv.appendChild(priceSpan);
+                        rightDiv.appendChild(changesSpan);
+
+                        item.appendChild(leftDiv);
+                        item.appendChild(rightDiv);
+                        itemsContainer.appendChild(item);
+                    });
+                });
+
+                colDiv.appendChild(itemsContainer);
+                grid.appendChild(colDiv);
+            });
+
+            // 更新全局时间
+            const now = new Date();
+            document.getElementById('globalUpdateTime').textContent =
+                now.toISOString().slice(0, 10) + ' ' + now.toTimeString().slice(0, 5);
+        }
+
+        // ================================================================
+        // 3. 渲染：单材料页面
+        // ================================================================
+        let singleChartInstance = null;
+        let singleCurrentData = [];
+
+        function initSinglePage() {
+            const select = document.getElementById('singleMaterial');
+            select.innerHTML = '';
+            ALL_MATERIALS.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.key;
+                opt.textContent = m.label;
+                select.appendChild(opt);
+            });
+
+            // 设置默认日期
+            const end = new Date();
+            const start = new Date();
+            start.setFullYear(start.getFullYear() - 1);
+            document.getElementById('singleStart').value = start.toISOString().slice(0, 10);
+            document.getElementById('singleEnd').value = end.toISOString().slice(0, 10);
+
+            // 事件绑定
+            select.addEventListener('change', updateSingle);
+            document.getElementById('singleStart').addEventListener('change', updateSingle);
+            document.getElementById('singleEnd').addEventListener('change', updateSingle);
+            document.getElementById('singleFreq').addEventListener('change', updateSingle);
+            document.getElementById('singleUnit').addEventListener('change', updateSingle);
+
+            // 快捷标签
+            document.querySelectorAll('#singleFilterBar .quick-tags .tag').forEach(tag => {
+                tag.addEventListener('click', function() {
+                    document.querySelectorAll('#singleFilterBar .quick-tags .tag').forEach(t => t.classList
+                        .remove('active'));
+                    this.classList.add('active');
+                    const range = this.dataset.range;
+                    const endDate = new Date();
+                    let startDate = new Date();
+                    switch (range) {
+                        case '7d':
+                            startDate.setDate(startDate.getDate() - 7);
+                            break;
+                        case '1m':
+                            startDate.setMonth(startDate.getMonth() - 1);
+                            break;
+                        case '6m':
+                            startDate.setMonth(startDate.getMonth() - 6);
+                            break;
+                        case '1y':
+                            startDate.setFullYear(startDate.getFullYear() - 1);
+                            break;
+                        case 'all':
+                            startDate = new Date('2023-01-01');
+                            break;
+                        default:
+                            return;
+                    }
+                    document.getElementById('singleStart').value = startDate.toISOString().slice(0, 10);
+                    document.getElementById('singleEnd').value = endDate.toISOString().slice(0, 10);
+                    updateSingle();
+                });
+            });
+
+            // 初始化图表
+            singleChartInstance = echarts.init(document.getElementById('singleChart'));
+            updateSingle();
+        }
+
+        function updateSingle() {
+            const materialKey = document.getElementById('singleMaterial').value;
+            const startDate = document.getElementById('singleStart').value;
+            const endDate = document.getElementById('singleEnd').value;
+            const freq = document.getElementById('singleFreq').value;
+            const unit = document.getElementById('singleUnit').value;
+
+            // 过滤数据
+            let filtered = mockData.filter(d =>
+                d.material_key === materialKey &&
+                d.date >= startDate &&
+                d.date <= endDate
+            );
+            filtered.sort((a, b) => a.date.localeCompare(b.date));
+
+            // 按频率聚合
+            let aggregated = filtered;
+            if (freq === '周度') {
+                aggregated = aggregateWeekly(filtered);
+            } else if (freq === '月度') {
+                aggregated = aggregateMonthly(filtered);
+            }
+
+            singleCurrentData = aggregated;
+
+            // 更新 KPI
+            updateSingleKPI(materialKey, aggregated, unit);
+
+            // 更新图表
+            updateSingleChart(materialKey, aggregated, unit, freq);
+
+            // 更新图表标题
+            const matLabel = ALL_MATERIALS.find(m => m.key === materialKey)?.label || materialKey;
+            document.getElementById('singleChartTitle').textContent =
+                `${matLabel} ${freq}价格走势  ${startDate} 至 ${endDate}`;
+
+            // 更新最新价格日期
+            if (aggregated.length > 0) {
+                const last = aggregated[aggregated.length - 1];
+                const dateTag = document.querySelector('.kpi-card .date-tag');
+                if (dateTag) {
+                    dateTag.textContent = `更新：${last.date}`;
+                }
+            }
+        }
+
+        function aggregateWeekly(data) {
+            const result = [];
+            let week = [];
+            let currentWeek = null;
+            data.forEach(d => {
+                const dateObj = new Date(d.date + 'T00:00:00');
+                const year = dateObj.getFullYear();
+                const weekNum = getWeekNumber(dateObj);
+                const key = `${year}-W${String(weekNum).padStart(2, '0')}`;
+                if (!currentWeek) currentWeek = key;
+                if (key !== currentWeek) {
+                    if (week.length > 0) {
+                        const avg = Math.round(week.reduce((s, r) => s + r.price, 0) / week.length);
+                        result.push({ date: week[0].date, price: avg });
+                    }
+                    week = [];
+                    currentWeek = key;
+                }
+                week.push(d);
+            });
+            if (week.length > 0) {
+                const avg = Math.round(week.reduce((s, r) => s + r.price, 0) / week.length);
+                result.push({ date: week[0].date, price: avg });
+            }
+            return result;
+        }
+
+        function aggregateMonthly(data) {
+            const result = [];
+            let month = [];
+            let currentMonth = null;
+            data.forEach(d => {
+                const monthKey = d.date.slice(0, 7);
+                if (!currentMonth) currentMonth = monthKey;
+                if (monthKey !== currentMonth) {
+                    if (month.length > 0) {
+                        const avg = Math.round(month.reduce((s, r) => s + r.price, 0) / month.length);
+                        result.push({ date: month[0].date, price: avg });
+                    }
+                    month = [];
+                    currentMonth = monthKey;
+                }
+                month.push(d);
+            });
+            if (month.length > 0) {
+                const avg = Math.round(month.reduce((s, r) => s + r.price, 0) / month.length);
+                result.push({ date: month[0].date, price: avg });
+            }
+            return result;
+        }
+
+        function getWeekNumber(d) {
+            const start = new Date(d.getFullYear(), 0, 1);
+            const diff = (d - start) / 86400000;
+            return Math.ceil((diff + start.getDay() + 1) / 7);
+        }
+
+        function updateSingleKPI(materialKey, data, unit) {
+            const container = document.getElementById('singleKpi');
+            if (data.length === 0) {
+                container.innerHTML = '<div class="kpi-card" style="grid-column:1/-1;text-align:center;padding:32px;">暂无数据</div>';
+                return;
+            }
+
+            const latest = data[data.length - 1];
+            const prev = data.length > 1 ? data[data.length - 2] : null;
+            const first = data[0];
+            const mid = data[Math.floor(data.length / 2)];
+
+            const unitLabel = unit === 'CNY' ? '元/吨' : '美元/吨';
+            const rate = unit === 'CNY' ? 1 : 0.14; // 模拟汇率
+
+            const latestPrice = Math.round(latest.price * rate);
+            const prevPrice = prev ? Math.round(prev.price * rate) : null;
+            const firstPrice = first ? Math.round(first.price * rate) : null;
+            const midPrice = mid ? Math.round(mid.price * rate) : null;
+
+            const changeDay = prevPrice ? calcChange(latestPrice, prevPrice) : null;
+            const changeMonth = midPrice ? calcChange(latestPrice, midPrice) : null;
+            const changeYear = firstPrice ? calcChange(latestPrice, firstPrice) : null;
+
+            const cards = [{
+                label: '最新价格',
+                value: latestPrice,
+                unit: unitLabel,
+                change: changeDay,
+                changeLabel: '较昨日',
+                dateTag: latest.date
+            }, {
+                label: '周度涨跌幅',
+                value: null,
+                change: changeDay,
+                changeLabel: 'vs 上周',
+                isPercent: true
+            }, {
+                label: '月度涨跌幅',
+                value: null,
+                change: changeMonth,
+                changeLabel: 'vs 上月',
+                isPercent: true
+            }, {
+                label: '年度涨跌幅',
+                value: null,
+                change: changeYear,
+                changeLabel: 'vs 去年今日',
+                isPercent: true
+            }];
+
+            container.innerHTML = cards.map(c => {
+                let valueHtml = '';
+                if (c.value !== null) {
+                    valueHtml = `<div class="value">${c.value.toLocaleString()} <span class="unit">${c.unit}</span></div>`;
+                }
+                let changeHtml = '';
+                if (c.change !== null) {
+                    const cls = c.change > 0 ? 'up' : c.change < 0 ? 'down' : 'flat';
+                    const sign = c.change > 0 ? '+' : '';
+                    const displayVal = c.isPercent ? `${sign}${c.change.toFixed(2)}%` :
+                        `${sign}${c.change.toFixed(2)}%`;
+                    changeHtml =
+                        `<div class="change ${cls}">${displayVal} <span class="label-light">${c.changeLabel}</span></div>`;
+                } else {
+                    changeHtml = `<div class="change flat">— <span class="label-light">${c.changeLabel || ''}</span></div>`;
+                }
+                const dateTagHtml = c.dateTag ? `<span class="date-tag">更新：${c.dateTag}</span>` : '';
+                return `
+                            <div class="kpi-card">
+                                <div class="label">${c.label} ${dateTagHtml}</div>
+                                ${valueHtml}
+                                ${changeHtml}
+                            </div>
+                        `;
+            }).join('');
+        }
+
+        function updateSingleChart(materialKey, data, unit, freq) {
+            if (!singleChartInstance) return;
+            if (data.length === 0) {
+                singleChartInstance.clear();
+                singleChartInstance.setOption({
+                    title: { text: '暂无数据', left: 'center', top: 'center', textStyle: { color: '#9aa6b5' } }
+                });
+                return;
+            }
+
+            const unitLabel = unit === 'CNY' ? '元/吨' : '美元/吨';
+            const rate = unit === 'CNY' ? 1 : 0.14;
+
+            const dates = data.map(d => d.date);
+            const prices = data.map(d => Math.round(d.price * rate));
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#fff',
+                    borderColor: '#e9edf4',
+                    borderWidth: 1,
+                    textStyle: { color: '#1e293b' },
+                    formatter: function(params) {
+                        const p = params[0];
+                        return `<strong>${p.axisValue}</strong><br/>价格：<strong>${p.value.toLocaleString()}</strong> ${unitLabel}`;
+                    }
+                },
+                grid: {
+                    left: '5%',
+                    right: '5%',
+                    bottom: '10%',
+                    top: '6%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: dates,
+                    axisLine: { lineStyle: { color: '#dce2ec' } },
+                    axisLabel: { color: '#6b7a8f', fontSize: 11 },
+                    splitLine: { show: false },
+                    axisTick: { show: false }
+                },
+                yAxis: {
+                    type: 'value',
+                    splitLine: { lineStyle: { color: '#f0f4fa', type: 'dashed' } },
+                    axisLabel: { color: '#6b7a8f', fontSize: 11 },
+                    name: unitLabel,
+                    nameTextStyle: { color: '#9aa6b5', fontSize: 12 }
+                },
+                series: [{
+                    data: prices,
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 5,
+                    lineStyle: {
+                        color: '#2b6c9e',
+                        width: 2.5
+                    },
+                    itemStyle: { color: '#2b6c9e' },
+                    areaStyle: {
+                        color: {
+                            type: 'linear',
+                            x: 0,
+                            y: 0,
+                            x2: 0,
+                            y2: 1,
+                            colorStops: [
+                                { offset: 0, color: 'rgba(43, 108, 158, 0.2)' },
+                                { offset: 1, color: 'rgba(43, 108, 158, 0.02)' }
+                            ]
+                        }
+                    },
+                    markPoint: {
+                        data: [
+                            { type: 'max', name: '最大值' },
+                            { type: 'min', name: '最小值' }
+                        ],
+                        symbol: 'circle',
+                        symbolSize: 48,
+                        label: {
+                            color: '#1e293b',
+                            formatter: function(params) { return params.value.toLocaleString(); },
+                            fontSize: 10,
+                            position: 'top'
+                        }
+                    }
+                }]
+            };
+
+            singleChartInstance.setOption(option, true);
+            singleChartInstance.resize();
+        }
+
+        // ================================================================
+        // 4. 渲染：多材料对比
+        // ================================================================
+        let multiChartInstance = null;
+        let multiCurrentMode = 'single';
+        let multiSelectedMaterials = ['碳酸锂', '六氟磷酸锂', '电解液'];
+
+        function initMultiPage() {
+            multiChartInstance = echarts.init(document.getElementById('multiChart'));
+
+            // 模式切换
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    multiCurrentMode = this.dataset.mode;
+                    document.getElementById('multiBaseDateGroup').style.display =
+                        multiCurrentMode === 'normalized' ? 'flex' : 'none';
+                    document.getElementById('multiChartTitle').textContent =
+                        `多材料价格对比 · ${this.textContent}`;
+                    updateMulti();
+                });
+            });
+
+            // 材料选择器
+            renderMultiSelectors();
+
+            // 基准日默认
+            const baseDate = new Date();
+            baseDate.setFullYear(baseDate.getFullYear() - 1);
+            document.getElementById('multiBaseDate').value = baseDate.toISOString().slice(0, 10);
+            document.getElementById('multiBaseDate').addEventListener('change', updateMulti);
+
+            document.getElementById('multiUnit').addEventListener('change', updateMulti);
+
+            updateMulti();
+        }
+
+        function renderMultiSelectors() {
+            const container = document.getElementById('multiMaterialSelector');
+            container.innerHTML = '';
+
+            multiSelectedMaterials.forEach((key, idx) => {
+                const mat = ALL_MATERIALS.find(m => m.key === key);
+                if (!mat) return;
+                const colors = ['#2b6c9e', '#d0312d', '#2e7d32', '#b28b3c', '#6b4c8a'];
+                const pill = document.createElement('span');
+                pill.className = 'pill';
+                pill.innerHTML = `
+                            <span class="dot" style="background:${colors[idx % colors.length]};"></span>
+                            ${mat.label}
+                            <span class="remove" data-key="${key}">✕</span>
+                        `;
+                pill.querySelector('.remove').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const k = this.dataset.key;
+                    multiSelectedMaterials = multiSelectedMaterials.filter(m => m !== k);
+                    renderMultiSelectors();
+                    updateMulti();
+                });
+                container.appendChild(pill);
+            });
+
+            // 添加按钮（最多5个）
+            if (multiSelectedMaterials.length < 5) {
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-btn';
+                addBtn.textContent = '+ 添加材料';
+                addBtn.addEventListener('click', function() {
+                    const available = ALL_MATERIALS
+                        .filter(m => !multiSelectedMaterials.includes(m.key))
+                        .map(m => m.key);
+                    if (available.length === 0) return;
+                    // 简单弹窗选择
+                    const choice = prompt(`可选材料：\n${available.join('\n')}\n\n输入要添加的材料名称：`, available[0]);
+                    if (choice && available.includes(choice)) {
+                        multiSelectedMaterials.push(choice);
+                        renderMultiSelectors();
+                        updateMulti();
+                    }
+                });
+                container.appendChild(addBtn);
+            }
+        }
+
+        function updateMulti() {
+            if (!multiChartInstance) return;
+            const unit = document.getElementById('multiUnit').value;
+            const unitLabel = unit === 'CNY' ? '元/吨' : '美元/吨';
+            const rate = unit === 'CNY' ? 1 : 0.14;
+            const baseDate = document.getElementById('multiBaseDate').value;
+
+            // 获取数据
+            const allData = {};
+            let commonDates = [];
+
+            multiSelectedMaterials.forEach(key => {
+                const filtered = mockData.filter(d => d.material_key === key);
+                filtered.sort((a, b) => a.date.localeCompare(b.date));
+                allData[key] = filtered;
+                if (filtered.length > 0) {
+                    const dates = filtered.map(d => d.date);
+                    if (commonDates.length === 0) commonDates = dates;
+                    else {
+                        // 取交集
+                        commonDates = commonDates.filter(d => dates.includes(d));
+                    }
+                }
+            });
+
+            if (commonDates.length === 0 || multiSelectedMaterials.length === 0) {
+                multiChartInstance.clear();
+                multiChartInstance.setOption({
+                    title: { text: '请添加至少一种材料', left: 'center', top: 'center', textStyle: { color: '#9aa6b5' } }
+                });
+                return;
+            }
+
+            // 构建系列
+            const colors = ['#2b6c9e', '#d0312d', '#2e7d32', '#b28b3c', '#6b4c8a'];
+            const series = [];
+            const legendData = [];
+
+            multiSelectedMaterials.forEach((key, idx) => {
+                const mat = ALL_MATERIALS.find(m => m.key === key);
+                const label = mat ? mat.label : key;
+                legendData.push(label);
+
+                const dataPoints = commonDates.map(d => {
+                    const found = allData[key].find(r => r.date === d);
+                    return found ? Math.round(found.price * rate) : null;
+                });
+
+                let processedData = dataPoints;
+                if (multiCurrentMode === 'normalized') {
+                    const baseIdx = commonDates.indexOf(baseDate);
+                    const baseVal = baseIdx >= 0 ? dataPoints[baseIdx] : dataPoints[0];
+                    if (baseVal && baseVal > 0) {
+                        processedData = dataPoints.map(v => v !== null ? Number(((v / baseVal) * 100).toFixed(2)) : null);
+                    }
+                }
+
+                series.push({
+                    name: label,
+                    type: 'line',
+                    smooth: true,
+                    symbol: 'circle',
+                    symbolSize: 4,
+                    lineStyle: { width: 2.5 },
+                    data: processedData,
+                    itemStyle: { color: colors[idx % colors.length] }
+                });
+            });
+
+            // 构建 Y 轴
+            let yAxisConfig = [];
+            if (multiCurrentMode === 'dual') {
+                const mid = Math.ceil(multiSelectedMaterials.length / 2);
+                yAxisConfig = [
+                    { type: 'value', name: unitLabel, splitLine: { lineStyle: { color: '#f0f4fa', type: 'dashed' } },
+                        axisLabel: { color: '#6b7a8f' } },
+                    { type: 'value', name: unitLabel, splitLine: { show: false },
+                        axisLabel: { color: '#6b7a8f' } }
+                ];
+                // 分配系列到左右轴
+                series.forEach((s, idx) => {
+                    s.yAxisIndex = idx < mid ? 0 : 1;
+                });
+            } else {
+                yAxisConfig = {
+                    type: 'value',
+                    name: multiCurrentMode === 'normalized' ? '指数 (基准日=100)' : unitLabel,
+                    splitLine: { lineStyle: { color: '#f0f4fa', type: 'dashed' } },
+                    axisLabel: { color: '#6b7a8f' }
+                };
+            }
+
+            const option = {
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: '#fff',
+                    borderColor: '#e9edf4',
+                    borderWidth: 1,
+                    textStyle: { color: '#1e293b' },
+                    formatter: function(params) {
+                        let html = `<strong>${params[0].axisValue}</strong><br/>`;
+                        params.forEach(p => {
+                            const val = multiCurrentMode === 'normalized' ? `${p.value.toFixed(1)}%` :
+                                `${p.value.toLocaleString()} ${unitLabel}`;
+                            html += `${p.marker} ${p.seriesName}: <strong>${val}</strong><br/>`;
+                        });
+                        return html;
+                    }
+                },
+                legend: {
+                    data: legendData,
+                    textStyle: { color: '#1e293b' },
+                    top: 0,
+                    right: 0,
+                    icon: 'circle',
+                    itemWidth: 10,
+                    itemHeight: 10
+                },
+                grid: {
+                    left: '5%',
+                    right: multiCurrentMode === 'dual' ? '8%' : '5%',
+                    bottom: '10%',
+                    top: '14%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: commonDates,
+                    axisLine: { lineStyle: { color: '#dce2ec' } },
+                    axisLabel: { color: '#6b7a8f', fontSize: 10, interval: 20 },
+                    splitLine: { show: false }
+                },
+                yAxis: yAxisConfig,
+                series: series
+            };
+
+            multiChartInstance.setOption(option, true);
+            multiChartInstance.resize();
+        }
+
+        // ================================================================
+        // 5. 下载工具
+        // ================================================================
+        function downloadChartImage(chartId) {
+            const chart = chartId === 'singleChart' ? singleChartInstance : multiChartInstance;
+            if (!chart) return;
+            const url = chart.getDataURL({
+                type: 'png',
+                pixelRatio: 2,
+                backgroundColor: '#fff'
+            });
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${chartId}_${new Date().toISOString().slice(0,10)}.png`;
+            a.click();
+        }
+
+        function downloadChartData(chartId) {
+            const chart = chartId === 'singleChart' ? singleChartInstance : multiChartInstance;
+            if (!chart) return;
+            const option = chart.getOption();
+            const xData = option.xAxis[0]?.data || [];
+            let csv = '日期';
+            let seriesNames = [];
+            let seriesData = [];
+
+            if (option.series && option.series.length > 0) {
+                option.series.forEach((s, idx) => {
+                    const name = s.name || `系列${idx+1}`;
+                    seriesNames.push(name);
+                    csv += `,${name}`;
+                    seriesData.push(s.data || []);
+                });
+                csv += '\n';
+                xData.forEach((date, i) => {
+                    let row = date;
+                    seriesData.forEach(sd => {
+                        const val = sd[i] !== undefined ? sd[i] : '';
+                        row += `,${val}`;
+                    });
+                    csv += row + '\n';
+                });
+            }
+
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `${chartId}_data_${new Date().toISOString().slice(0,10)}.csv`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        }
+
+        // ================================================================
+        // 6. Tab 切换
+        // ================================================================
+        document.querySelectorAll('.tabs .tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                const pageId = this.dataset.page;
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(`page-${pageId}`).classList.add('active');
+
+                // 图表 resize
+                setTimeout(() => {
+                    if (singleChartInstance) singleChartInstance.resize();
+                    if (multiChartInstance) multiChartInstance.resize();
+                }, 200);
+            });
+        });
+
+        // ================================================================
+        // 7. 窗口自适应
+        // ================================================================
+        window.addEventListener('resize', function() {
+            if (singleChartInstance) singleChartInstance.resize();
+            if (multiChartInstance) multiChartInstance.resize();
+        });
+
+        // ================================================================
+        // 8. 启动
+        // ================================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            renderOverview();
+            initSinglePage();
+            initMultiPage();
+
+            // 默认激活总览
+            document.querySelector('.tabs .tab.active')?.click();
+        });
+    </script>
+</body>
+</html>
