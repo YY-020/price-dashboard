@@ -1,14 +1,9 @@
 """
-数据加载模块 - 从 02_Output/price_data_clean.csv 和 price_data_meta.csv 读取清洗后的数据
+数据加载模块 - 从 Supabase 读取价格数据
 """
 import pandas as pd
 from pathlib import Path
-
-# 项目根目录
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-OUTPUT_DIR = PROJECT_ROOT / "02_Output"
-CLEAN_CSV = OUTPUT_DIR / "price_data_clean.csv"
-META_CSV = OUTPUT_DIR / "price_data_meta.csv"
+import streamlit as st
 
 # 材料分组定义（key=CSV列名, value=显示名，严格照搬用户指定命名）
 MATERIAL_GROUPS = {
@@ -80,9 +75,19 @@ for group, members in MATERIAL_GROUPS.items():
 DISPLAY_TO_CSV = {v: k for k, v in DISPLAY_NAMES.items()}
 
 
+def _get_supabase_client():
+    """获取 Supabase 客户端"""
+    from supabase import create_client, Client
+
+    url = st.secrets["SUPABASE"]["url"]
+    anon_key = st.secrets["SUPABASE"]["anon_key"]
+    return create_client(url, anon_key)
+
+
+@st.cache_data(ttl=300)
 def load_price_data() -> dict:
     """
-    从清洗后的 CSV 加载价格数据，返回结构化字典：
+    从 Supabase 加载价格数据，返回结构化字典：
     {
         'materials': [{name, display_name, group, unit, source, formula, spec}, ...],
         'df': DataFrame (index=日期, columns=CSV列名),
@@ -90,31 +95,25 @@ def load_price_data() -> dict:
         'sources': [数据源列表],
     }
     """
-    if not CLEAN_CSV.exists():
-        raise FileNotFoundError(
-            f"未找到清洗后的数据文件: {CLEAN_CSV}\n"
-            "请先运行 data_cleaner.py 生成清洗数据"
-        )
+    supabase = _get_supabase_client()
 
-    # 读取数据
-    df = pd.read_csv(str(CLEAN_CSV), encoding="utf-8-sig", parse_dates=["日期"])
-    df = df.set_index("日期").sort_index()
+    response = supabase.table("price_data").select("date", "material_key", "price").execute()
+    if not response.data:
+        raise ValueError("Supabase 中没有数据")
 
-    # 读取元信息
-    meta = None
-    if META_CSV.exists():
-        meta = pd.read_csv(str(META_CSV), encoding="utf-8-sig")
-        meta = meta.set_index("行标签")
+    df_long = pd.DataFrame(response.data)
+    df_long["date"] = pd.to_datetime(df_long["date"])
 
-    # 构建材料列表
-    price_cols = [c for c in df.columns if c != "日期"]
+    df = df_long.pivot(index="date", columns="material_key", values="price").sort_index()
+
+    price_cols = list(df.columns)
     materials = []
 
     for col_name in price_cols:
-        unit = _get_meta(meta, col_name, "单位")
-        source = _get_meta(meta, col_name, "数据源")
-        formula = _get_meta(meta, col_name, "化学式")
-        spec = _get_meta(meta, col_name, "规格")
+        unit = ""
+        source = ""
+        formula = ""
+        spec = ""
         group = _find_group(col_name)
         display_name = DISPLAY_NAMES.get(col_name, col_name)
 
@@ -136,20 +135,6 @@ def load_price_data() -> dict:
         "date_range": (df.index.min(), df.index.max()),
         "sources": sources,
     }
-
-
-def _get_meta(meta: pd.DataFrame, col_name: str, row_label: str) -> str:
-    """从元信息 DataFrame 中提取指定列和行的值"""
-    if meta is None:
-        return ""
-    if col_name not in meta.columns:
-        return ""
-    if row_label not in meta.index:
-        return ""
-    val = meta.loc[row_label, col_name]
-    if pd.isna(val):
-        return ""
-    return str(val).strip()
 
 
 def _find_group(material_name: str) -> str:
