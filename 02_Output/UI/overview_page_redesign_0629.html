@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>产业链价格看板 · 总览</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Calibri', 'Microsoft YaHei', sans-serif;
+            background: #f5f7fc;
+            padding: 30px;
+            color: #1e293b;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        /* 页眉 */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .page-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #0b2b4a;
+        }
+        .page-header h1 span {
+            color: #2b6c9e;
+        }
+        .page-header .update {
+            font-size: 14px;
+            color: #6b7a8f;
+            background: #fff;
+            padding: 6px 18px;
+            border-radius: 20px;
+            border: 1px solid #e9edf4;
+        }
+
+        /* 三列布局：上游 | 中游 | 下游 */
+        .three-col {
+            display: grid;
+            grid-template-columns: 1.1fr 2.2fr 0.9fr;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 1200px) {
+            .three-col {
+                grid-template-columns: 1fr 1.5fr 1fr;
+            }
+        }
+        @media (max-width: 992px) {
+            .three-col {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+        }
+
+        /* 每一列 */
+        .col {
+            background: #fff;
+            border-radius: 16px;
+            padding: 18px 14px 20px;
+            border: 1px solid #e9edf4;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            height: fit-content;
+        }
+
+        .col-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9edf4;
+            margin-bottom: 14px;
+        }
+        .col-header .title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0b2b4a;
+        }
+        .col-header .title .emoji {
+            margin-right: 4px;
+        }
+        .col-header .count {
+            font-size: 11px;
+            color: #6b7a8f;
+            background: #f0f4fa;
+            padding: 0px 10px;
+            border-radius: 12px;
+            line-height: 22px;
+            white-space: nowrap;
+        }
+
+        /* 卡片网格 */
+        .card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        /* 单个材料卡片 */
+        .mat-card {
+            flex: 1 1 calc(50% - 6px);
+            min-width: 90px;
+            border-radius: 10px;
+            padding: 8px 10px 6px;
+            border: 1px solid #e0e7ef;
+            transition: all 0.15s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+        .mat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+            border-color: #b0c4db;
+        }
+
+        /* 涨跌背景色 */
+        .mat-card.up {
+            background: #fde8e8;
+            border-color: #f5c6c6;
+        }
+        .mat-card.down {
+            background: #e8f5e9;
+            border-color: #c8e6c9;
+        }
+        .mat-card.flat {
+            background: #ffffff;
+            border-color: #e0e7ef;
+        }
+
+        /* 第一行：中文名 + 化学式 */
+        .mat-card .name {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1e293b;
+            line-height: 1.3;
+            margin-bottom: 2px;
+        }
+        .mat-card .name .chem {
+            font-weight: 400;
+            color: #1e293b;
+        }
+
+        /* 第二行：价格 */
+        .mat-card .price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0b2b4a;
+            line-height: 1.2;
+            margin: 2px 0;
+        }
+        .mat-card .price .unit {
+            font-size: 11px;
+            font-weight: 400;
+            color: #9aa6b5;
+            margin-left: 2px;
+        }
+
+        /* 第三行：涨跌幅 */
+        .mat-card .change {
+            font-size: 14px;
+            font-weight: 700;
+            margin-top: 2px;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+        }
+        .mat-card .change .up {
+            color: #d0312d;
+        }
+        .mat-card .change .down {
+            color: #2e7d32;
+        }
+        .mat-card .change .flat {
+            color: #b0b8c5;
+        }
+        .mat-card .change .label {
+            font-weight: 400;
+            color: #9aa6b5;
+            font-size: 11px;
+            margin-left: 2px;
+        }
+
+        /* 子分组标签 */
+        .sub-group {
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .sub-group .group-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7a8f;
+            padding: 3px 0 4px 0;
+            letter-spacing: 0.3px;
+            border-bottom: 1px dashed #e9edf4;
+            margin-bottom: 5px;
+            width: 100%;
+            text-transform: uppercase;
+        }
+
+        /* ----- 中游特殊布局：体系块 ----- */
+        .system-block {
+            background: #fafbfc;
+            border-radius: 12px;
+            padding: 12px 12px 14px;
+            margin-bottom: 14px;
+            border: 1px solid #e9edf4;
+        }
+        .system-block:last-child {
+            margin-bottom: 0;
+        }
+        .system-block .block-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0b2b4a;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .system-block .block-title .badge {
+            font-size: 11px;
+            font-weight: 400;
+            color: #6b7a8f;
+            background: #eef2f6;
+            padding: 0px 10px;
+            border-radius: 12px;
+            line-height: 20px;
+        }
+
+        /* 体系内 flex 行 */
+        .system-row {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+        }
+        .system-row .raw-materials {
+            flex: 2;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: start;
+        }
+
+        /* 电解液体系内三列原料 */
+        .raw-materials .raw-col {
+            flex: 1;
+            min-width: 100px;
+            background: #f5f8fc;
+            border-radius: 8px;
+            padding: 6px 8px 8px;
+            border: 1px solid #e9edf4;
+        }
+        .raw-materials .raw-col .raw-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7a8f;
+            border-bottom: 1px dashed #dce2ec;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .raw-materials .raw-col .mat-card {
+            flex: 1 1 100%;
+            min-width: 60px;
+            margin-bottom: 4px;
+        }
+        .raw-materials .raw-col .mat-card:last-child {
+            margin-bottom: 0;
+        }
+
+        .system-row .arrow-column {
+            flex: 0 0 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #8aa0b8;
+            font-weight: 300;
+        }
+        .system-row .product-material {
+            flex: 1;
+            display: flex;
+            align-items: center;
+        }
+        .system-row .product-material .mat-card {
+            flex: 1;
+            min-width: 100px;
+            background: #eef4fa;
+            border-color: #c8d6e8;
+        }
+        .system-row .product-material .mat-card:hover {
+            background: #e2eaf2;
+        }
+
+        /* 注释 */
+        .footer-note {
+            margin-top: 24px;
+            font-size: 12px;
+            color: #b0b8c5;
+            text-align: right;
+            border-top: 1px solid #e9edf4;
+            padding-top: 14px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 992px) {
+            .three-col {
+                grid-template-columns: 1fr;
+            }
+            .system-row {
+                flex-wrap: wrap;
+            }
+            .system-row .arrow-column {
+                flex: 0 0 100%;
+                height: 30px;
+                transform: rotate(90deg);
+            }
+            .raw-materials .raw-col {
+                flex: 1 1 calc(50% - 4px);
+            }
+        }
+        @media (max-width: 600px) {
+            body {
+                padding: 16px;
+            }
+            .raw-materials .raw-col {
+                flex: 1 1 100%;
+            }
+            .system-row .product-material .mat-card {
+                min-width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- 页眉 -->
+        <div class="page-header">
+            <h1>⛁ <span>Li</span>Price · 产业链价格总览</h1>
+            <div class="update">📅 更新：2026-06-30</div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- 三列：上游 | 中游 | 下游 -->
+        <!-- ============================================================ -->
+        <div class="three-col">
+
+            <!-- ========================================================== -->
+            <!-- 第1列：上游 · 原材料 -->
+            <!-- ========================================================== -->
+            <div class="col">
+                <div class="col-header">
+                    <span class="title"><span class="emoji">⬆</span>上游 · 原材料</span>
+                    <span class="count">8种</span>
+                </div>
+
+                <div class="card-grid">
+                    <!-- 锂 -->
+                    <div class="sub-group">
+                        <div class="group-label">🔹 锂资源</div>
+                        <div class="card-grid" style="width:100%;">
+                            <div class="mat-card up" onclick="alert('跳转：碳酸锂')">
+                                <div class="name">碳酸锂 <span class="chem">- Li₂CO₃</span></div>
+                                <div class="price">170,500</div>
+                                <div class="change"><span class="up">+2.7%</span> <span class="label">环比</span></div>
+                            </div>
+                            <div class="mat-card up" onclick="alert('跳转：氢氧化锂微粉')">
+                                <div class="name">氢氧化锂 <span class="chem">- LiOH</span> 微粉</div>
+                                <div class="price">161,000</div>
+                                <div class="change"><span class="up">+1.8%</span> <span class="label">环比</span></div>
+                            </div>
+                            <div class="mat-card up" onclick="alert('跳转：氢氧化锂粗颗粒')">
+                                <div class="name">氢氧化锂 <span class="chem">- LiOH</span> 粗颗粒</div>
+                                <div class="price">155,000</div>
+                                <div class="change"><span class="up">+1.8%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 钴 -->
+                    <div class="sub-group">
+                        <div class="group-label">🔹 钴资源</div>
+                        <div class="card-grid" style="width:100%;">
+                            <div class="mat-card down" onclick="alert('跳转：硫酸钴')">
+                                <div class="name">硫酸钴 <span class="chem">- CoSO₄</span></div>
+                                <div class="price">89,250</div>
+                                <div class="change"><span class="down">-0.8%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 镍 -->
+                    <div class="sub-group">
+                        <div class="group-label">🔹 镍资源</div>
+                        <div class="card-grid" style="width:100%;">
+                            <div class="mat-card down" onclick="alert('跳转：硫酸镍')">
+                                <div class="name">硫酸镍 <span class="chem">- NiSO₄</span></div>
+                                <div class="price">33,610</div>
+                                <div class="change"><span class="down">-0.8%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 锰 -->
+                    <div class="sub-group">
+                        <div class="group-label">🔹 锰资源</div>
+                        <div class="card-grid" style="width:100%;">
+                            <div class="mat-card flat" onclick="alert('跳转：硫酸锰')">
+                                <div class="name">硫酸锰 <span class="chem">- MnSO₄</span></div>
+                                <div class="price">7,690</div>
+                                <div class="change"><span class="flat">-0.0%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- 第2列：中游 · 电池材料 -->
+            <!-- ========================================================== -->
+            <div class="col" style="border-left: 4px solid #dce5f0; border-right: 4px solid #dce5f0;">
+                <div class="col-header">
+                    <span class="title"><span class="emoji">⚙️</span>中游 · 电池材料</span>
+                    <span class="count">3大体系</span>
+                </div>
+
+                <!-- ================================================== -->
+                <!-- 体系1：电解液体系 -->
+                <!-- ================================================== -->
+                <div class="system-block">
+                    <div class="block-title">
+                        🧪 电解液体系
+                        <span class="badge">溶剂 · 添加剂 · 锂盐 → 电解液</span>
+                    </div>
+                    <div class="system-row">
+                        <!-- 左侧：三列原料 -->
+                        <div class="raw-materials">
+                            <!-- 溶剂列 -->
+                            <div class="raw-col">
+                                <div class="raw-title">🧪 溶剂</div>
+                                <div class="mat-card down" onclick="alert('跳转：EC')">
+                                    <div class="name">碳酸乙烯酯 <span class="chem">- EC</span></div>
+                                    <div class="price">5,800</div>
+                                    <div class="change"><span class="down">-1.4%</span> <span class="label">环比</span></div>
+                                </div>
+                                <div class="mat-card down" onclick="alert('跳转：PC')">
+                                    <div class="name">碳酸丙烯酯 <span class="chem">- PC</span></div>
+                                    <div class="price">8,125</div>
+                                    <div class="change"><span class="down">-1.0%</span> <span class="label">环比</span></div>
+                                </div>
+                                <div class="mat-card down" onclick="alert('跳转：DMC')">
+                                    <div class="name">碳酸二甲酯 <span class="chem">- DMC</span></div>
+                                    <div class="price">4,750</div>
+                                    <div class="change"><span class="down">-0.8%</span> <span class="label">环比</span></div>
+                                </div>
+                                <div class="mat-card down" onclick="alert('跳转：EMC')">
+                                    <div class="name">碳酸甲乙酯 <span class="chem">- EMC</span></div>
+                                    <div class="price">6,650</div>
+                                    <div class="change"><span class="down">-1.2%</span> <span class="label">环比</span></div>
+                                </div>
+                                <div class="mat-card flat" onclick="alert('跳转：DEC')">
+                                    <div class="name">碳酸二乙酯 <span class="chem">- DEC</span></div>
+                                    <div class="price">8,550</div>
+                                    <div class="change"><span class="flat">0.0%</span> <span class="label">环比</span></div>
+                                </div>
+                                <div class="mat-card down" onclick="alert('跳转：MA')">
+                                    <div class="name">乙酸甲酯 <span class="chem">- MA</span></div>
+                                    <div class="price">7,000</div>
+                                    <div class="change"><span class="down">-0.5%</span> <span class="label">环比</span></div>
+                                </div>
+                            </div>
+
+                            <!-- 添加剂列 -->
+                            <div class="raw-col">
+                                <div class="raw-title">🧪 添加剂</div>
+                                <div class="mat-card flat" onclick="alert('跳转：VC')">
+                                    <div class="name">碳酸亚乙烯酯 <span class="chem">- VC</span></div>
+                                    <div class="price">142,500</div>
+                                    <div class="change"><span class="flat">0.0%</span> <span class="label">环比</span></div>
+                                </div>
+                                <div class="mat-card flat" onclick="alert('跳转：FEC')">
+                                    <div class="name">氟代碳酸乙烯酯 <span class="chem">- FEC</span></div>
+                                    <div class="price">54,500</div>
+                                    <div class="change"><span class="flat">0.0%</span> <span class="label">环比</span></div>
+                                </div>
+                                <div class="mat-card flat" onclick="alert('跳转：DTD')">
+                                    <div class="name">硫酸乙烯酯 <span class="chem">- DTD</span></div>
+                                    <div class="price">65,000</div>
+                                    <div class="change"><span class="flat">0.0%</span> <span class="label">环比</span></div>
+                                </div>
+                                <div class="mat-card flat" onclick="alert('跳转：PRS')">
+                                    <div class="name">丙烯磺酸内酯 <span class="chem">- PRS</span></div>
+                                    <div class="price">—</div>
+                                    <div class="change"><span class="flat">—</span></div>
+                                </div>
+                                <div class="mat-card flat" onclick="alert('跳转：PS')">
+                                    <div class="name">1,3-丙烷磺酸内酯 <span class="chem">- PS</span></div>
+                                    <div class="price">—</div>
+                                    <div class="change"><span class="flat">—</span></div>
+                                </div>
+                            </div>
+
+                            <!-- 锂盐列 -->
+                            <div class="raw-col">
+                                <div class="raw-title">🧪 锂盐</div>
+                                <div class="mat-card down" onclick="alert('跳转：六氟磷酸锂')">
+                                    <div class="name">六氟磷酸锂 <span class="chem">- LiPF₆</span></div>
+                                    <div class="price">131,484</div>
+                                    <div class="change"><span class="down">-0.2%</span> <span class="label">环比</span></div>
+                                </div>
+                                <div class="mat-card flat" onclick="alert('跳转：LiFSI')">
+                                    <div class="name">双氟磺酰亚胺锂 <span class="chem">- LiFSI</span></div>
+                                    <div class="price">—</div>
+                                    <div class="change"><span class="flat">—</span></div>
+                                </div>
+                                <div class="mat-card flat" onclick="alert('跳转：LiDFOB')">
+                                    <div class="name">二氟草酸硼酸锂 <span class="chem">- LiDFOB</span></div>
+                                    <div class="price">—</div>
+                                    <div class="change"><span class="flat">—</span></div>
+                                </div>
+                                <div class="mat-card flat" onclick="alert('跳转：LiPO₂F₂')">
+                                    <div class="name">二氟磷酸锂 <span class="chem">- LiPO₂F₂</span></div>
+                                    <div class="price">—</div>
+                                    <div class="change"><span class="flat">—</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 中间箭头 -->
+                        <div class="arrow-column">→</div>
+
+                        <!-- 右侧：电解液 -->
+                        <div class="product-material">
+                            <div class="mat-card up" onclick="alert('跳转：电解液')" style="background:#eef4fa; border-color:#c8d6e8;">
+                                <div class="name">电解液 <span class="chem">- 1.0M LiPF₆</span></div>
+                                <div class="price">213,458</div>
+                                <div class="change"><span class="up">+2.0%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================================================== -->
+                <!-- 体系2：LFP体系 -->
+                <!-- ================================================== -->
+                <div class="system-block">
+                    <div class="block-title">
+                        🔋 LFP体系
+                        <span class="badge">FP → LFP</span>
+                    </div>
+                    <div class="system-row">
+                        <div class="raw-materials">
+                            <div class="mat-card up" onclick="alert('跳转：磷酸铁')" style="flex:1;">
+                                <div class="name">磷酸铁 <span class="chem">- FP</span></div>
+                                <div class="price">14,850</div>
+                                <div class="change"><span class="up">+0.7%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                        <div class="arrow-column">→</div>
+                        <div class="product-material">
+                            <div class="mat-card down" onclick="alert('跳转：磷酸铁锂')" style="background:#eef4fa; border-color:#c8d6e8;">
+                                <div class="name">磷酸铁锂 <span class="chem">- LFP</span></div>
+                                <div class="price">363,661</div>
+                                <div class="change"><span class="down">-2.3%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================================================== -->
+                <!-- 体系3：CNT体系 -->
+                <!-- ================================================== -->
+                <div class="system-block">
+                    <div class="block-title">
+                        🔬 CNT体系
+                        <span class="badge">NMP · C₂H₄ · C₂H₂ → CNT</span>
+                    </div>
+                    <div class="system-row">
+                        <div class="raw-materials">
+                            <div class="mat-card flat" onclick="alert('跳转：NMP')" style="flex:1;">
+                                <div class="name">N-甲基吡咯烷酮 <span class="chem">- NMP</span></div>
+                                <div class="price">10,100</div>
+                                <div class="change"><span class="flat">0.0%</span> <span class="label">环比</span></div>
+                            </div>
+                            <div class="mat-card down" onclick="alert('跳转：乙烯')" style="flex:1;">
+                                <div class="name">乙烯 <span class="chem">- C₂H₄</span></div>
+                                <div class="price">7,800</div>
+                                <div class="change"><span class="down">-0.3%</span> <span class="label">环比</span></div>
+                            </div>
+                            <div class="mat-card flat" onclick="alert('跳转：乙炔')" style="flex:1;">
+                                <div class="name">乙炔 <span class="chem">- C₂H₂</span></div>
+                                <div class="price">85.0</div>
+                                <div class="change"><span class="flat">0.0%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                        <div class="arrow-column">→</div>
+                        <div class="product-material">
+                            <div class="mat-card up" onclick="alert('跳转：碳纳米管')" style="background:#eef4fa; border-color:#c8d6e8;">
+                                <div class="name">碳纳米管 <span class="chem">- CNT</span></div>
+                                <div class="price">236,127</div>
+                                <div class="change"><span class="up">+1.7%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================================== -->
+            <!-- 第3列：下游 · 电芯 -->
+            <!-- ========================================================== -->
+            <div class="col">
+                <div class="col-header">
+                    <span class="title"><span class="emoji">⬇</span>下游 · 电芯</span>
+                    <span class="count">3种</span>
+                </div>
+
+                <div class="card-grid">
+                    <div class="sub-group" style="width:100%;">
+                        <div class="group-label">🔋 LFP系</div>
+                        <div class="card-grid" style="width:100%;">
+                            <div class="mat-card up" onclick="alert('跳转：LFP动力电芯')" style="flex:1 1 100%;">
+                                <div class="name">方形磷酸铁锂电芯 <span class="chem">- 动力型 174Ah</span></div>
+                                <div class="price">0.394 <span class="unit">元/Wh</span></div>
+                                <div class="change"><span class="up">+1.0%</span> <span class="label">环比</span></div>
+                            </div>
+                            <div class="mat-card flat" onclick="alert('跳转：LFP储能电芯')" style="flex:1 1 100%;">
+                                <div class="name">方形磷酸铁锂电芯 <span class="chem">- 储能型 314Ah</span></div>
+                                <div class="price">0.363 <span class="unit">元/Wh</span></div>
+                                <div class="change"><span class="flat">0.0%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sub-group" style="width:100%;">
+                        <div class="group-label">🔋 三元系</div>
+                        <div class="card-grid" style="width:100%;">
+                            <div class="mat-card flat" onclick="alert('跳转：三元电芯')" style="flex:1 1 100%;">
+                                <div class="name">8系方形三元电芯 <span class="chem">- 动力型 158Ah</span></div>
+                                <div class="price">0.708 <span class="unit">元/Wh</span></div>
+                                <div class="change"><span class="flat">0.0%</span> <span class="label">环比</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            ⚡ 点击任意卡片跳转详情 · 红色↑涨 绿色↓跌 · 箭头表示原料→电池材料转化关系
+        </div>
+    </div>
+</body>
+</html>

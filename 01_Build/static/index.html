@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LiPrice Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">⛁ <span>Dashboard</span></div>
+        <div class="nav-item active" data-page="overview">
+            <span class="icon">📊</span> 总览 · 产业链
+        </div>
+        <div class="nav-item" data-page="single">
+            <span class="icon">📈</span> 单材料价格
+        </div>
+        <div class="nav-item" data-page="multi">
+            <span class="icon">📉</span> 多材料对比
+        </div>
+        <div class="nav-divider"></div>
+        <div style="padding: 0 20px; font-size: 12px; color: #b0b8c5; margin-top: 4px;">扩展模块</div>
+        <div class="nav-item" style="opacity: 0.5; cursor: not-allowed;">
+            <span class="icon">📦</span> 供应追踪
+        </div>
+        <div class="nav-item" style="opacity: 0.5; cursor: not-allowed;">
+            <span class="icon">📈</span> 需求分析
+        </div>
+    </div>
+
+    <div class="main">
+        <div class="top-bar">
+            <div class="page-title" id="pageTitle">📊 总览 · 产业链</div>
+            <div class="update-time">📅 数据更新：<span id="globalUpdateTime">2026-06-30</span></div>
+        </div>
+
+        <div class="page active" id="page-overview">
+            <div class="overview-grid" id="overviewGrid"></div>
+            <div class="overview-footnote">
+                ⚡ 本周均价（周一至周五）· 环比 = 较上周同期 · 同比 = 较去年同期
+            </div>
+        </div>
+
+        <div class="page" id="page-single">
+            <div class="filter-bar" id="singleFilterBar">
+                <div class="filter-group">
+                    <label>材料</label>
+                    <select id="singleMaterial"></select>
+                </div>
+                <div class="filter-group">
+                    <label>开始</label>
+                    <input type="date" id="singleStart" />
+                </div>
+                <div class="filter-group">
+                    <label>结束</label>
+                    <input type="date" id="singleEnd" />
+                </div>
+                <div class="filter-group">
+                    <label>频率</label>
+                    <select id="singleFreq">
+                        <option value="日度">日度</option>
+                        <option value="周度">周度</option>
+                        <option value="月度">月度</option>
+                        <option value="年度">年度</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>单位</label>
+                    <select id="singleUnit">
+                        <option value="CNY">人民币/吨</option>
+                        <option value="USD">美元/吨</option>
+                    </select>
+                </div>
+                <div class="filter-group" style="margin-left:auto;">
+                    <div class="quick-tags">
+                        <span class="tag" data-range="7d">近1周</span>
+                        <span class="tag active" data-range="1m">近1月</span>
+                        <span class="tag" data-range="6m">近6月</span>
+                        <span class="tag" data-range="1y">近1年</span>
+                        <span class="tag" data-range="all">全部</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpi-row" id="singleKpi"></div>
+
+            <div class="chart-wrapper">
+                <div class="chart-header">
+                    <div class="chart-title" id="singleChartTitle">电池级碳酸锂 日度价格走势</div>
+                    <div class="chart-actions">
+                        <button onclick="downloadChartImage('singleChart')">🖼️ 下载图片</button>
+                        <button onclick="downloadChartData('singleChart')">📥 下载数据</button>
+                    </div>
+                </div>
+                <div id="singleChart" class="chart-container"></div>
+                <div class="chart-source">数据来源：GEO / SMM / BaiInfor</div>
+            </div>
+        </div>
+
+        <div class="page" id="page-multi">
+            <div class="multi-controls" id="multiControls">
+                <div class="mode-group">
+                    <button class="mode-btn active" data-mode="single">单Y轴</button>
+                    <button class="mode-btn" data-mode="dual">双Y轴</button>
+                    <button class="mode-btn" data-mode="normalized">归一化</button>
+                </div>
+                <div class="mat-selector" id="multiMaterialSelector"></div>
+                <div class="filter-group" id="multiBaseDateGroup">
+                    <label>基准日</label>
+                    <input type="date" id="multiBaseDate" />
+                </div>
+                <div class="filter-group" style="margin-left:auto;">
+                    <label>单位</label>
+                    <select id="multiUnit">
+                        <option value="CNY">人民币/吨</option>
+                        <option value="USD">美元/吨</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="chart-wrapper">
+                <div class="chart-header">
+                    <div class="chart-title" id="multiChartTitle">多材料价格对比 · 单Y轴</div>
+                    <div class="chart-actions">
+                        <button onclick="downloadChartImage('multiChart')">🖼️ 下载图片</button>
+                        <button onclick="downloadChartData('multiChart')">📥 下载数据</button>
+                    </div>
+                </div>
+                <div id="multiChart" class="chart-container"></div>
+                <div class="chart-source">数据来源：GEO / SMM / BaiInfor</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

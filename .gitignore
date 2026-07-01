@@ -1,4 +1,5 @@
 00_Inbox/
+DOCS/
 __pycache__/
 *.pyc
 *.pyo
