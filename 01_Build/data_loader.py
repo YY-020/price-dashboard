@@ -107,6 +107,76 @@ def get_supabase_client():
         raise Exception(f"创建 Supabase 客户端失败: {str(e)}")
 
 
+def load_price_data_from_supabase_via_http(min_date=None):
+    """通过 HTTP API 直接访问 Supabase"""
+    import requests
+    
+    supabase_url = st.secrets.get("SUPABASE_URL")
+    supabase_key = st.secrets.get("SUPABASE_KEY")
+    
+    if not supabase_url or not supabase_key:
+        raise Exception("Supabase 配置未完成")
+    
+    url = f"{supabase_url}/rest/v1/price_data"
+    
+    params = {}
+    if min_date:
+        params["date"] = f"gte.{min_date}"
+    
+    headers = {
+        "apikey": supabase_key,
+        "Authorization": f"Bearer {supabase_key}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+    }
+    
+    response = requests.get(url, params=params, headers=headers)
+    
+    if response.status_code != 200:
+        raise Exception(f"Supabase HTTP 请求失败: {response.status_code} - {response.text}")
+    
+    data = response.json()
+    
+    if not data:
+        raise Exception("Supabase 没有返回数据")
+    
+    df = pd.DataFrame(data)
+    
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"])
+    
+    df["price"] = pd.to_numeric(df["price"], errors="coerce")
+    df = df.dropna(subset=["price"])
+    
+    df = df.sort_values(["material_key", "date"])
+    
+    meta_dict = load_meta_data()
+    
+    data_rows = []
+    for _, row in df.iterrows():
+        mat_key = row["material_key"]
+        unit_info = meta_dict.get(mat_key, {})
+        
+        data_rows.append({
+            "date": row["date"].strftime("%Y-%m-%d"),
+            "material_key": mat_key,
+            "price": float(row["price"]),
+            "unit": unit_info.get("unit", "RMB/t"),
+            "source": unit_info.get("source", ""),
+            "chem": unit_info.get("chem", ""),
+        })
+    
+    date_range = (df["date"].min().strftime("%Y-%m-%d"), df["date"].max().strftime("%Y-%m-%d"))
+    
+    return {
+        "data": data_rows,
+        "date_range": date_range,
+        "materials": ALL_MATERIALS,
+        "material_groups": MATERIAL_GROUPS,
+        "data_source": "supabase",
+    }
+
+
 def load_meta_data():
     """加载元数据，返回 {material_key: {unit, source, chem}}"""
     if META_CSV.exists():
@@ -282,13 +352,18 @@ def load_price_data_from_csv(min_date=None):
 def load_price_data(min_date=None):
     """加载价格数据，优先从 Supabase，失败则回退到本地 CSV"""
     try:
-        result = load_price_data_from_supabase(min_date)
+        result = load_price_data_from_supabase_via_http(min_date)
         result["error_message"] = ""
         return result
-    except Exception as e:
-        csv_result = load_price_data_from_csv(min_date)
-        csv_result["error_message"] = str(e)
-        return csv_result
+    except Exception as e1:
+        try:
+            result = load_price_data_from_supabase(min_date)
+            result["error_message"] = ""
+            return result
+        except Exception as e2:
+            csv_result = load_price_data_from_csv(min_date)
+            csv_result["error_message"] = f"HTTP API: {str(e1)}, Supabase Client: {str(e2)}"
+            return csv_result
 
 
 def get_data_for_frontend():
