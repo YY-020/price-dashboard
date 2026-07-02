@@ -58,7 +58,11 @@ try:
         supabase_status["message"] = "✅ Supabase 连接成功"
     else:
         supabase_status["success"] = False
-        supabase_status["message"] = "🟡 使用本地 CSV（Supabase 连接失败）"
+        error_msg = loaded_data.get("error_message", "")
+        if error_msg:
+            supabase_status["message"] = f"🟡 使用本地 CSV（Supabase 失败: {error_msg}）"
+        else:
+            supabase_status["message"] = "🟡 使用本地 CSV（Supabase 连接失败）"
     
     dashboard_data = {
         "price_data": loaded_data["data"],
