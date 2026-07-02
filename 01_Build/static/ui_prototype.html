@@ -1793,37 +1793,6 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, initializing data...');
-            try {
-                if (window.DASHBOARD_DATA) {
-                    console.log('DASHBOARD_DATA exists, parsing...');
-                    MATERIAL_GROUPS = window.DASHBOARD_DATA.material_groups || DEFAULT_MATERIAL_GROUPS;
-                    ALL_MATERIALS = window.DASHBOARD_DATA.materials || Object.values(MATERIAL_GROUPS).flat();
-                    PRICE_DATA = window.DASHBOARD_DATA.price_data || [];
-                    
-                    PRICE_DATA.forEach(function(d) {
-                        if (d.unit) UNIT_MAP[d.material_key] = d.unit;
-                    });
-                    
-                    console.log('Data initialized:', PRICE_DATA.length, 'records,', ALL_MATERIALS.length, 'materials');
-                } else {
-                    console.log('DASHBOARD_DATA not found, using defaults');
-                    MATERIAL_GROUPS = DEFAULT_MATERIAL_GROUPS;
-                    ALL_MATERIALS = Object.values(MATERIAL_GROUPS).flat();
-                    generateMockData();
-                }
-                
-                document.getElementById('loading').classList.add('hidden');
-                console.log('Calling initApp...');
-                initApp();
-                console.log('initApp completed');
-            } catch (e) {
-                console.error('Critical error during initialization:', e);
-                document.getElementById('loading').classList.add('hidden');
-                alert('页面加载失败: ' + e.message);
-            }
-        });
     </script>
 </body>
 </html>

@@ -11,7 +11,9 @@ EXCHANGE_RATE = 7.24
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 LONG_CSV = PROJECT_ROOT / "02_Output" / "price_data_long.csv"
+LONG_CSV_FALLBACK = PROJECT_ROOT / "01_Build" / "price_data_long.csv"
 META_CSV = PROJECT_ROOT / "02_Output" / "price_data_meta.csv"
+META_CSV_FALLBACK = PROJECT_ROOT / "01_Build" / "price_data_meta.csv"
 
 MATERIAL_GROUPS = {
     '上游-原材料': [
@@ -87,10 +89,14 @@ for group, items in MATERIAL_GROUPS.items():
 
 def load_meta_data():
     """加载元数据，返回 {material_key: {unit, source, chem}}"""
-    if not META_CSV.exists():
+    if META_CSV.exists():
+        csv_path = META_CSV
+    elif META_CSV_FALLBACK.exists():
+        csv_path = META_CSV_FALLBACK
+    else:
         return {}
     
-    df = pd.read_csv(str(META_CSV))
+    df = pd.read_csv(str(csv_path))
     df = df.set_index("行标签")
     
     meta_dict = {}
@@ -108,10 +114,14 @@ def load_meta_data():
 @st.cache_data(ttl=300)
 def load_price_data(min_date=None):
     """从本地长表 CSV 加载价格数据"""
-    if not LONG_CSV.exists():
+    if LONG_CSV.exists():
+        csv_path = LONG_CSV
+    elif LONG_CSV_FALLBACK.exists():
+        csv_path = LONG_CSV_FALLBACK
+    else:
         raise FileNotFoundError(f"数据文件不存在: {LONG_CSV}")
     
-    df = pd.read_csv(str(LONG_CSV))
+    df = pd.read_csv(str(csv_path))
     df["date"] = pd.to_datetime(df["date"])
     
     if min_date:

@@ -962,6 +962,7 @@
                 }
                 
                 const freqLabels = { daily: '日度', monthly: '月度', quarterly: '季度', yearly: '年度' };
+                const freqLabel = freqLabels[frequency] || '日度';
                 
                 const matInfo = ALL_MATERIALS.find(m => m.key === materialKey);
                 
@@ -1058,7 +1059,7 @@
                 singleChartInstance.__materialKey = materialKey;
                 
                 const unitLabel = unit === 'USD' ? 'USD/t' : getUnit(materialKey);
-                let freqLabel = currentLang === 'zh' ? freqLabels[frequency] : 
+                const freqLabel = currentLang === 'zh' ? freqLabels[frequency] : 
                     { daily: 'Daily', monthly: 'Monthly', quarterly: 'Quarterly', yearly: 'Yearly' }[frequency];
                 const priceTrend = currentLang === 'zh' ? '价格走势' : 'Price Trend';
                 const unitText = currentLang === 'zh' ? '单位' : 'Unit';
