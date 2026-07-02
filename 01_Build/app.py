@@ -3,6 +3,7 @@
 """
 import sys
 import json
+import socket
 from pathlib import Path
 
 BUILD_DIR = Path(__file__).resolve().parent
@@ -10,7 +11,7 @@ if str(BUILD_DIR) not in sys.path:
     sys.path.insert(0, str(BUILD_DIR))
 
 import streamlit as st
-from data_loader import get_data_for_frontend, load_price_data
+from data_loader import get_data_for_frontend, load_price_data, load_price_data_from_supabase_via_http
 
 st.set_page_config(
     page_title="LiPrice Dashboard",
@@ -26,7 +27,7 @@ st.markdown("""
     .stApp { background: #f5f7fc; padding: 0; margin: 0; width: 100%; overflow-x: hidden; }
     .st-emotion-cache-13ln4jf { padding: 0; }
     .st-emotion-cache-16txtl3 { padding: 0; }
-    .supabase-status {{
+    .supabase-status {
         position: fixed;
         top: 10px;
         left: 10px;
@@ -35,21 +36,72 @@ st.markdown("""
         border-radius: 8px;
         font-size: 12px;
         font-weight: bold;
-    }}
-    .supabase-success {{
+    }
+    .supabase-success {
         background: #dcfce7;
         color: #166534;
         border: 1px solid #bbf7d0;
-    }}
-    .supabase-error {{
+    }
+    .supabase-error {
         background: #fee2e2;
         color: #991b1b;
         border: 1px solid #fecaca;
-    }}
+    }
+    .test-btn {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 9999;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 supabase_status = {"success": False, "message": ""}
+
+st.session_state.test_result = st.session_state.get("test_result", "")
+
+def test_supabase_connection():
+    import requests
+    
+    supabase_url = st.secrets.get("SUPABASE_URL")
+    supabase_key = st.secrets.get("SUPABASE_KEY")
+    
+    if not supabase_url or not supabase_key:
+        return "❌ Supabase 配置未完成"
+    
+    try:
+        import socket
+        domain = supabase_url.replace("https://", "").split("/")[0]
+        ip = socket.gethostbyname(domain)
+        result = f"📍 DNS 解析成功: {domain} → {ip}\n"
+    except Exception as e:
+        result = f"📍 DNS 解析失败: {str(e)}\n"
+    
+    try:
+        url = f"{supabase_url}/rest/v1/price_data"
+        headers = {
+            "apikey": supabase_key,
+            "Authorization": f"Bearer {supabase_key}",
+            "Content-Type": "application/json",
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            result += f"✅ HTTP 请求成功，返回 {len(data)} 条数据"
+        else:
+            result += f"❌ HTTP 请求失败: {response.status_code} - {response.text}"
+    except Exception as e:
+        result += f"❌ HTTP 请求失败: {str(e)}"
+    
+    st.session_state.test_result = result
+    return result
+
+if st.sidebar.button("🔍 测试 Supabase 连接"):
+    test_supabase_connection()
+
+if st.session_state.test_result:
+    st.sidebar.text_area("测试结果", st.session_state.test_result, height=200)
 
 try:
     loaded_data = load_price_data()
