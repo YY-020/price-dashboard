@@ -1,0 +1,151 @@
+# 新闻采集渠道配置
+# 从 constants.py 的 NEWS_CHANNELS 字典迁移而来
+# 格式说明：
+#   name: 渠道显示名称
+#   url: 主页/列表页 URL
+#   type: 采集类型 (rss / html / pc)
+#   rss_url: RSS 订阅地址（仅 type=rss 时有效）
+#   base_url: 站点基础 URL（仅 type=pc 时有效）
+#   list_urls: 列表页 URL 列表（仅 type=pc 时有效）
+
+# ========== 固定网站（6个） ==========
+electrive_battery:
+  name: Electrive-Battery
+  url: https://www.electrive.com/category/battery-fuel-cell/
+  type: rss
+  rss_url: https://www.electrive.com/category/battery-fuel-cell/feed/
+
+electrive_auto:
+  name: Electrive-Auto
+  url: https://www.electrive.com/category/automobile/
+  type: rss
+  rss_url: https://www.electrive.com/category/automobile/feed/
+
+electrive_politics:
+  name: Electrive-Politics
+  url: https://www.electrive.com/category/politics/
+  type: rss
+  rss_url: https://www.electrive.com/category/politics/feed/
+
+marklines:
+  name: MarkLines-CN-News
+  url: https://www.marklines.com/cn/news/tag/181/ev-battery
+  type: html
+
+battery_news_de:
+  name: Battery-News-DE
+  url: https://battery-news.de/en/home/
+  type: rss
+  rss_url: https://battery-news.de/en/feed/
+
+thelec:
+  name: Thelec
+  url: https://www.thelec.net/news/articleList.html?sc_section_code=S1N4&view_type=sm
+  type: html
+
+# ========== 官网类（12个） ==========
+powerco:
+  name: PowerCo
+  url: https://www.powerco.de/en/news.html
+  type: html
+
+catl:
+  name: CATL
+  url: https://www.catl.com/news/
+  type: html
+
+sk_on:
+  name: SK On
+  url: http://eng.sk-on.com/company/press.asp
+  type: html
+
+samsung_sdi:
+  name: Samsung SDI
+  url: https://www.samsungsdi.com/sdi-now/sdi-news/list.html
+  type: html
+
+panasonic:
+  name: Panasonic
+  url: https://news.panasonic.com/global/articles/search/category/all/recent?category=all&type=press
+  type: html
+
+tinci:
+  name: 天赐材料
+  url: https://www.tinci.com/zxzx/
+  type: html
+
+byd:
+  name: BYD
+  url: https://www.byd.com/en/news-list
+  type: html
+
+capchem:
+  name: 新宙邦 Capchem
+  url: https://www.capchem.com/news/2/
+  type: html
+
+rtxc:
+  name: 瑞泰新材 RTXC
+  url: http://www.rtxc.com/?list_19/
+  type: html
+
+mcgc:
+  name: 三菱化学 CGC
+  url: https://www.mcgc.com/english/news_release/index.html
+  type: html
+
+dselectera:
+  name: DS Electera
+  url: https://www.dselectera.com/cn/board/board.php?bo_table=press
+  type: html
+
+# ========== 微信公众号 → PC站点映射（6个） ==========
+gaogong_lidian:
+  name: 高工锂电
+  type: pc
+  base_url: https://www.gg-lb.com
+  list_urls:
+    - https://www.gg-lb.com/news/list-htm-catid-1.html
+
+wode_dianchi:
+  name: 我的电池网
+  type: pc
+  base_url: https://www.itdcw.com
+  list_urls:
+    - https://www.itdcw.com/
+    - https://www.itdcw.com/news/top/
+    - https://www.itdcw.com/news/focus/
+
+dongli_dianchi:
+  name: 动力电池网
+  type: pc
+  base_url: http://www.dldcw.cn
+  list_urls:
+    - http://www.dldcw.cn/M/News/index.html
+
+xinluo_lidian:
+  name: 鑫椤锂电
+  type: pc
+  base_url: http://www.icbattery.com
+  list_urls:
+    - http://www.icbattery.com/news/li_list.php
+    - http://www.icbattery.com/news/new_energy_vehicles_list.php
+    - http://www.icbattery.com/news/energy_storage_list.php
+
+smm_lidian:
+  name: SMM锂电
+  type: pc
+  base_url: https://news.smm.cn
+  list_urls:
+    - https://news.smm.cn/l/94/pid/120
+    - https://news.smm.cn/l/94/pid/116
+    - https://news.smm.cn/l/94/pid/139
+    - https://news.smm.cn/l/94/pages/1
+
+weike_lidian:
+  name: 维科网锂电
+  type: pc
+  base_url: https://libattery.ofweek.com
+  list_urls:
+    - https://libattery.ofweek.com/CATList-36000-8100-libattery.html
+    - https://libattery.ofweek.com/CATList-36000-8200-libattery.html

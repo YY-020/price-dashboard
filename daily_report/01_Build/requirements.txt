@@ -1,0 +1,9 @@
+feedparser
+jieba
+newspaper4k
+pyyaml
+requests
+beautifulsoup4
+lxml
+pandas
+openpyxl

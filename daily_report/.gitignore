@@ -1,0 +1,8 @@
+02_Output/
+__pycache__/
+*.pyc
+raw_news_test.xlsx
+*demo*.py
+*test*.py
+*.log
+02_Output/DOCS/

@@ -1,0 +1,12 @@
+00_Inbox/
+DOCS/
+__pycache__/
+*.pyc
+*.pyo
+02_Output/*.log
+.env
+.git/
+.DS_Store
+Thumbs.db
+SYSTEM.md
+.streamlit/secrets.toml
