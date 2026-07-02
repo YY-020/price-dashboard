@@ -279,13 +279,14 @@ def load_price_data_from_csv(min_date=None):
     }
 
 
-@st.cache_data(ttl=300)
 def load_price_data(min_date=None):
     """加载价格数据，优先从 Supabase，失败则回退到本地 CSV"""
     try:
-        return load_price_data_from_supabase(min_date)
+        result = load_price_data_from_supabase(min_date)
+        print("✅ Supabase 加载成功")
+        return result
     except Exception as e:
-        print(f"Supabase 加载失败，回退到本地 CSV: {str(e)}")
+        print(f"❌ Supabase 加载失败，回退到本地 CSV: {str(e)}")
         return load_price_data_from_csv(min_date)
 
 
