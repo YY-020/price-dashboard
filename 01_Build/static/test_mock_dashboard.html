@@ -805,13 +805,8 @@
 
         function renderOverview() {
             try {
-                console.log('renderOverview started');
                 const grid = document.getElementById('overviewGrid');
-                console.log('overviewGrid element:', grid);
-                if (!grid) {
-                    console.error('overviewGrid not found');
-                    return;
-                }
+                if (!grid) return;
                 
                 grid.innerHTML = '';
                 
@@ -1691,7 +1686,7 @@
                     }
                 };
                 
-                currentLang = 'zh';
+                let currentLang = 'zh';
                 
                 document.querySelectorAll('.lang-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
@@ -1723,14 +1718,12 @@
                     document.getElementById('singleUnit').previousElementSibling.textContent = trans[lang].unit;
                     document.getElementById('singleFrequency').previousElementSibling.textContent = trans[lang].frequency;
                     document.getElementById('singleTimeTags').previousElementSibling.textContent = trans[lang].timeRange;
-                    const singleDateApply = document.getElementById('singleDateApply');
-                    if (singleDateApply) singleDateApply.textContent = trans[lang].apply;
+                    document.getElementById('singleDateApply').textContent = trans[lang].apply;
                     
                     document.getElementById('multiUnit').previousElementSibling.textContent = trans[lang].unit;
                     document.getElementById('multiFrequency').previousElementSibling.textContent = trans[lang].frequency;
                     document.getElementById('multiTimeTags').previousElementSibling.textContent = trans[lang].timeRange;
-                    const multiDateApply = document.getElementById('multiDateApply');
-                    if (multiDateApply) multiDateApply.textContent = trans[lang].apply;
+                    document.getElementById('multiDateApply').textContent = trans[lang].apply;
                     
                     document.querySelectorAll('#singleFrequency option').forEach(opt => {
                         const freqMap = { daily: trans[lang].daily, monthly: trans[lang].monthly, quarterly: trans[lang].quarterly, yearly: trans[lang].yearly };
@@ -1825,5 +1818,7 @@
             }
         });
     </script>
-</body>
+<script>
+    window.DASHBOARD_DATA = {"material_groups": {"上游·原材料": ["碳酸锂", "氢氧化锂"], "中游·电解液/LFP/CNT": ["六氟磷酸锂", "VC"], "下游·电芯": ["LFP电芯"]}, "materials": ["碳酸锂", "氢氧化锂", "六氟磷酸锂", "VC", "LFP电芯"], "price_data": [{"date": "2026-06-01", "material_key": "碳酸锂", "price": 285000, "unit": "RMB/t", "source": "SMM", "chem": "Li₂CO₃"}, {"date": "2026-06-02", "material_key": "碳酸锂", "price": 283000, "unit": "RMB/t", "source": "SMM", "chem": "Li₂CO₃"}, {"date": "2026-06-03", "material_key": "碳酸锂", "price": 281000, "unit": "RMB/t", "source": "SMM", "chem": "Li₂CO₃"}, {"date": "2026-06-04", "material_key": "碳酸锂", "price": 279000, "unit": "RMB/t", "source": "SMM", "chem": "Li₂CO₃"}, {"date": "2026-06-05", "material_key": "碳酸锂", "price": 277000, "unit": "RMB/t", "source": "SMM", "chem": "Li₂CO₃"}, {"date": "2026-06-01", "material_key": "氢氧化锂", "price": 295000, "unit": "RMB/t", "source": "SMM", "chem": "LiOH·H₂O"}, {"date": "2026-06-02", "material_key": "氢氧化锂", "price": 293000, "unit": "RMB/t", "source": "SMM", "chem": "LiOH·H₂O"}, {"date": "2026-06-03", "material_key": "氢氧化锂", "price": 291000, "unit": "RMB/t", "source": "SMM", "chem": "LiOH·H₂O"}, {"date": "2026-06-04", "material_key": "氢氧化锂", "price": 289000, "unit": "RMB/t", "source": "SMM", "chem": "LiOH·H₂O"}, {"date": "2026-06-05", "material_key": "氢氧化锂", "price": 287000, "unit": "RMB/t", "source": "SMM", "chem": "LiOH·H₂O"}], "date_range": ["2026-06-01", "2026-06-05"]};
+</script></body>
 </html>

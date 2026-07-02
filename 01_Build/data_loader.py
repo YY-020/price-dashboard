@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 from pathlib import Path
 import json
+from io import BytesIO
 
 EXCHANGE_RATE = 7.24
 
@@ -150,7 +151,9 @@ def load_price_data(min_date=None):
 
 def get_data_for_frontend():
     """获取前端需要的数据格式"""
-    loaded = load_price_data(min_date="2025-01-01")
+    from datetime import datetime, timedelta
+    six_months_ago = (datetime.now() - timedelta(days=180)).strftime("%Y-%m-%d")
+    loaded = load_price_data(min_date=six_months_ago)
     
     return {
         "price_data": loaded["data"],
@@ -158,3 +161,38 @@ def get_data_for_frontend():
         "materials": loaded["materials"],
         "material_groups": loaded["material_groups"],
     }
+
+
+def export_to_wide_excel(material_keys=None, start_date=None, end_date=None):
+    """
+    将价格数据导出为宽表格式的Excel文件
+    :param material_keys: 材料列表，None表示全部材料
+    :param start_date: 起始日期，None表示最早日期
+    :param end_date: 终止日期，None表示最晚日期
+    :return: BytesIO对象，包含Excel文件内容
+    """
+    loaded = load_price_data(min_date=None)
+    data_rows = loaded["data"]
+    
+    df = pd.DataFrame(data_rows)
+    df["date"] = pd.to_datetime(df["date"])
+    
+    if material_keys:
+        df = df[df["material_key"].isin(material_keys)]
+    
+    if start_date:
+        df = df[df["date"] >= pd.to_datetime(start_date)]
+    
+    if end_date:
+        df = df[df["date"] <= pd.to_datetime(end_date)]
+    
+    wide_df = df.pivot(index="date", columns="material_key", values="price")
+    wide_df = wide_df.sort_index()
+    wide_df.index.name = "日期"
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        wide_df.to_excel(writer, sheet_name="价格数据")
+    
+    output.seek(0)
+    return output
