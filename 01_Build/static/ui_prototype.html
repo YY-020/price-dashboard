@@ -1793,6 +1793,12 @@
             }
         }
 
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadData);
+        } else {
+            loadData();
+        }
+
     </script>
 </body>
 </html>
