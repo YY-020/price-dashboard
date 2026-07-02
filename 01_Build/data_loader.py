@@ -95,13 +95,16 @@ def get_supabase_client():
         supabase_url = st.secrets.get("SUPABASE_URL")
         supabase_key = st.secrets.get("SUPABASE_KEY")
         
-        if supabase_url and supabase_key:
-            return create_client(supabase_url, supabase_key)
-        return None
-    except ImportError:
-        return None
+        if not supabase_url:
+            raise Exception("SUPABASE_URL 未配置")
+        if not supabase_key:
+            raise Exception("SUPABASE_KEY 未配置")
+        
+        return create_client(supabase_url, supabase_key)
+    except ImportError as e:
+        raise Exception(f"supabase 包未安装: {str(e)}")
     except Exception as e:
-        return None
+        raise Exception(f"创建 Supabase 客户端失败: {str(e)}")
 
 
 def load_meta_data():
@@ -282,6 +285,7 @@ def load_price_data(min_date=None):
     try:
         return load_price_data_from_supabase(min_date)
     except Exception as e:
+        print(f"Supabase 加载失败，回退到本地 CSV: {str(e)}")
         return load_price_data_from_csv(min_date)
 
 
