@@ -429,6 +429,7 @@
             <div class="page-title" id="pageTitle">📊 总览 · 产业链</div>
             <div class="top-bar-right">
                 <div class="update-time">📅 数据更新：<span id="globalUpdateTime">加载中...</span></div>
+                <div class="data-source-badge" id="dataSourceBadge" style="display: none; margin-left: 10px; padding: 4px 8px; background: #e8f5e9; color: #2e7d32; border-radius: 4px; font-size: 12px;"></div>
                 <div class="language-switch">
                     <button class="lang-btn active" data-lang="zh">CN</button>
                     <button class="lang-btn" data-lang="en">EN</button>
@@ -662,6 +663,25 @@
                 PRICE_DATA.forEach(d => {
                     if (d.unit) UNIT_MAP[d.material_key] = d.unit;
                 });
+                
+                const dataSourceBadge = document.getElementById('dataSourceBadge');
+                if (dataSourceBadge) {
+                    const source = DASHBOARD_DATA.data_source || 'unknown';
+                    if (source === 'supabase') {
+                        dataSourceBadge.textContent = '🔵 Supabase';
+                        dataSourceBadge.style.background = '#dbeafe';
+                        dataSourceBadge.style.color = '#1e40af';
+                    } else if (source === 'local_csv') {
+                        dataSourceBadge.textContent = '🟡 Local CSV';
+                        dataSourceBadge.style.background = '#fef3c7';
+                        dataSourceBadge.style.color = '#b45309';
+                    } else {
+                        dataSourceBadge.textContent = '⚪ Unknown';
+                        dataSourceBadge.style.background = '#f3f4f6';
+                        dataSourceBadge.style.color = '#374151';
+                    }
+                    dataSourceBadge.style.display = 'inline-block';
+                }
                 
                 document.getElementById('loading').classList.add('hidden');
                 

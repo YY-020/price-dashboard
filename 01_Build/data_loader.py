@@ -224,6 +224,55 @@ def load_price_data_from_csv(min_date=None):
         "date_range": date_range,
         "materials": ALL_MATERIALS,
         "material_groups": MATERIAL_GROUPS,
+        "data_source": "supabase",
+    }
+
+
+def load_price_data_from_csv(min_date=None):
+    """从本地长表 CSV 加载价格数据"""
+    if LONG_CSV.exists():
+        csv_path = LONG_CSV
+    elif LONG_CSV_FALLBACK.exists():
+        csv_path = LONG_CSV_FALLBACK
+    else:
+        raise FileNotFoundError(f"数据文件不存在: {LONG_CSV}")
+    
+    df = pd.read_csv(str(csv_path))
+    df["date"] = pd.to_datetime(df["date"])
+    
+    if min_date:
+        min_date_dt = pd.to_datetime(min_date)
+        df = df[df["date"] >= min_date_dt]
+    
+    df["price"] = pd.to_numeric(df["price"], errors="coerce")
+    df = df.dropna(subset=["price"])
+    
+    df = df.sort_values(["material_key", "date"])
+    
+    meta_dict = load_meta_data()
+    
+    data_rows = []
+    for _, row in df.iterrows():
+        mat_key = row["material_key"]
+        unit_info = meta_dict.get(mat_key, {})
+        
+        data_rows.append({
+            "date": row["date"].strftime("%Y-%m-%d"),
+            "material_key": mat_key,
+            "price": float(row["price"]),
+            "unit": unit_info.get("unit", "RMB/t"),
+            "source": unit_info.get("source", ""),
+            "chem": unit_info.get("chem", ""),
+        })
+    
+    date_range = (df["date"].min().strftime("%Y-%m-%d"), df["date"].max().strftime("%Y-%m-%d"))
+    
+    return {
+        "data": data_rows,
+        "date_range": date_range,
+        "materials": ALL_MATERIALS,
+        "material_groups": MATERIAL_GROUPS,
+        "data_source": "local_csv",
     }
 
 
@@ -247,6 +296,7 @@ def get_data_for_frontend():
         "date_range": loaded["date_range"],
         "materials": loaded["materials"],
         "material_groups": loaded["material_groups"],
+        "data_source": loaded.get("data_source", "unknown"),
     }
 
 
