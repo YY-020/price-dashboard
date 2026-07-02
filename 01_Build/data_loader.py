@@ -1,5 +1,5 @@
 """
-数据加载模块 - 从本地 CSV 文件读取价格数据
+数据加载模块 - 从 Supabase 读取价格数据，本地 CSV 作为备用
 """
 import pandas as pd
 import streamlit as st
@@ -87,6 +87,23 @@ for group, items in MATERIAL_GROUPS.items():
         KEY_TO_GROUP[item["key"]] = group
 
 
+def get_supabase_client():
+    """获取 Supabase 客户端"""
+    try:
+        from supabase import create_client, Client
+        
+        supabase_url = st.secrets.get("SUPABASE_URL")
+        supabase_key = st.secrets.get("SUPABASE_KEY")
+        
+        if supabase_url and supabase_key:
+            return create_client(supabase_url, supabase_key)
+        return None
+    except ImportError:
+        return None
+    except Exception as e:
+        return None
+
+
 def load_meta_data():
     """加载元数据，返回 {material_key: {unit, source, chem}}"""
     if META_CSV.exists():
@@ -111,8 +128,59 @@ def load_meta_data():
     return meta_dict
 
 
-@st.cache_data(ttl=300)
-def load_price_data(min_date=None):
+def load_price_data_from_supabase(min_date=None):
+    """从 Supabase 加载价格数据"""
+    supabase = get_supabase_client()
+    if not supabase:
+        raise Exception("Supabase 客户端未配置")
+    
+    query = supabase.table("price_data").select("*")
+    
+    if min_date:
+        query = query.gte("date", min_date)
+    
+    response = query.order("date", desc=False).execute()
+    
+    if not response.data:
+        raise Exception("Supabase 没有返回数据")
+    
+    df = pd.DataFrame(response.data)
+    
+    if "date" in df.columns:
+        df["date"] = pd.to_datetime(df["date"])
+    
+    df["price"] = pd.to_numeric(df["price"], errors="coerce")
+    df = df.dropna(subset=["price"])
+    
+    df = df.sort_values(["material_key", "date"])
+    
+    meta_dict = load_meta_data()
+    
+    data_rows = []
+    for _, row in df.iterrows():
+        mat_key = row["material_key"]
+        unit_info = meta_dict.get(mat_key, {})
+        
+        data_rows.append({
+            "date": row["date"].strftime("%Y-%m-%d"),
+            "material_key": mat_key,
+            "price": float(row["price"]),
+            "unit": unit_info.get("unit", "RMB/t"),
+            "source": unit_info.get("source", ""),
+            "chem": unit_info.get("chem", ""),
+        })
+    
+    date_range = (df["date"].min().strftime("%Y-%m-%d"), df["date"].max().strftime("%Y-%m-%d"))
+    
+    return {
+        "data": data_rows,
+        "date_range": date_range,
+        "materials": ALL_MATERIALS,
+        "material_groups": MATERIAL_GROUPS,
+    }
+
+
+def load_price_data_from_csv(min_date=None):
     """从本地长表 CSV 加载价格数据"""
     if LONG_CSV.exists():
         csv_path = LONG_CSV
@@ -157,6 +225,15 @@ def load_price_data(min_date=None):
         "materials": ALL_MATERIALS,
         "material_groups": MATERIAL_GROUPS,
     }
+
+
+@st.cache_data(ttl=300)
+def load_price_data(min_date=None):
+    """加载价格数据，优先从 Supabase，失败则回退到本地 CSV"""
+    try:
+        return load_price_data_from_supabase(min_date)
+    except Exception as e:
+        return load_price_data_from_csv(min_date)
 
 
 def get_data_for_frontend():
