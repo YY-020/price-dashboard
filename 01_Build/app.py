@@ -3,10 +3,7 @@
 """
 import sys
 import json
-import threading
-import time
 from pathlib import Path
-from http.server import HTTPServer, SimpleHTTPRequestHandler
 
 BUILD_DIR = Path(__file__).resolve().parent
 if str(BUILD_DIR) not in sys.path:
@@ -29,7 +26,6 @@ st.markdown("""
     .stApp { background: #f5f7fc; padding: 0; margin: 0; width: 100%; overflow-x: hidden; }
     .st-emotion-cache-13ln4jf { padding: 0; }
     .st-emotion-cache-16txtl3 { padding: 0; }
-    iframe { border: none; width: 100%; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -40,24 +36,16 @@ except Exception as e:
     st.stop()
 
 data_json = json.dumps(dashboard_data, ensure_ascii=False)
-data_file = BUILD_DIR / "static" / "dashboard_data.json"
-data_file.write_text(data_json, encoding="utf-8")
 
-PORT = 8504
+html_file = BUILD_DIR / "static" / "ui_prototype.html"
+html_content = html_file.read_text(encoding="utf-8")
 
-def start_server():
-    class Handler(SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=str(BUILD_DIR / "static"), **kwargs)
-        def log_message(self, format, *args):
-            pass
-    
-    server = HTTPServer(("localhost", PORT), Handler)
-    server.serve_forever()
+data_injection = f"""
+<script>
+    window.DASHBOARD_DATA = {data_json};
+</script>
+"""
 
-thread = threading.Thread(target=start_server, daemon=True)
-thread.start()
+html_content = html_content.replace("</head>", data_injection + "</head>")
 
-time.sleep(1)
-
-st.markdown(f'<iframe src="http://localhost:{PORT}/ui_prototype.html" width="100%" height="900" style="border:none;"></iframe>', unsafe_allow_html=True)
+st.components.v1.html(html_content, height=1000, scrolling=True)
